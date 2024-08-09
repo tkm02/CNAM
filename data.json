@@ -1,0 +1,115 @@
+{
+    "responsables": [
+      {
+        "id": 1,
+        "nom": "Jean Dupont",
+        "site": {
+          "id": 101,
+          "nom": "Site A",
+          "equipes": [
+            {
+              "nom": "Equipe A",
+              "agents": [
+                { "id": 1, "nom": "Agent 1", "role": "Technicien" },
+                { "id": 2, "nom": "Agent 2", "role": "Technicien" },
+                { "id": 3, "nom": "Agent 3", "role": "Superviseur" }
+              ]
+            },
+            {
+              "nom": "Equipe B",
+              "agents": [
+                { "id": 4, "nom": "Agent 4", "role": "Technicien" },
+                { "id": 5, "nom": "Agent 5", "role": "Superviseur" },
+                { "id": 6, "nom": "Agent 6", "role": "Technicien" }
+              ]
+            },
+            {
+              "nom": "Equipe C",
+              "agents": [
+                { "id": 7, "nom": "Agent 7", "role": "Technicien" },
+                { "id": 8, "nom": "Agent 8", "role": "Technicien" },
+                { "id": 9, "nom": "Agent 9", "role": "Superviseur" }
+              ]
+            },
+            {
+              "nom": "Equipe D",
+              "agents": [
+                { "id": 10, "nom": "Agent 10", "role": "Technicien" },
+                { "id": 11, "nom": "Agent 11", "role": "Superviseur" },
+                { "id": 12, "nom": "Agent 12", "role": "Technicien" }
+              ]
+            }
+          ],
+          "equipements": [
+            { "type": "Kit", "quantite": 5 },
+            { "type": "Imprimante", "quantite": 2 }
+          ]
+        }
+      },
+      {
+        "id": 2,
+        "nom": "Marie Leclerc",
+        "site": {
+          "id": 102,
+          "nom": "Site B",
+          "equipes": [
+            {
+              "nom": "Equipe A",
+              "agents": [
+                { "id": 13, "nom": "Agent 13", "role": "Technicien" },
+                { "id": 14, "nom": "Agent 14", "role": "Superviseur" }
+              ]
+            },
+            {
+              "nom": "Equipe B",
+              "agents": [
+                { "id": 15, "nom": "Agent 15", "role": "Technicien" },
+                { "id": 16, "nom": "Agent 16", "role": "Technicien" }
+              ]
+            },
+            {
+              "nom": "Equipe C",
+              "agents": [
+                { "id": 17, "nom": "Agent 17", "role": "Technicien" },
+                { "id": 18, "nom": "Agent 18", "role": "Superviseur" },
+                { "id": 19, "nom": "Agent 19", "role": "Technicien" }
+              ]
+            }
+          ],
+          "equipements": [
+            { "type": "Kit", "quantite": 3 },
+            { "type": "Imprimante", "quantite": 1 }
+          ]
+        }
+      },
+      {
+        "id": 3,
+        "nom": "Paul Martin",
+        "site": {
+          "id": 103,
+          "nom": "Site C",
+          "equipes": [
+            {
+              "nom": "Equipe A",
+              "agents": [
+                { "id": 20, "nom": "Agent 20", "role": "Technicien" },
+                { "id": 21, "nom": "Agent 21", "role": "Technicien" }
+              ]
+            },
+            {
+              "nom": "Equipe B",
+              "agents": [
+                { "id": 22, "nom": "Agent 22", "role": "Superviseur" },
+                { "id": 23, "nom": "Agent 23", "role": "Technicien" }
+              ]
+            }
+          ],
+          "equipements": [
+            { "type": "Kit", "quantite": 4 },
+            { "type": "Imprimante", "quantite": 2 }
+          ]
+        }
+      }
+    ]
+  }
+  
