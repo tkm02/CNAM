@@ -112,7 +112,7 @@ const modifyItem = (teamName: string, siteName: string) => {
     border: 1px solid #ccc;
     border-radius: 8px;
     padding: 16px;
-    width: 80%;
+    width: 50%;
     margin: 10px auto;
   }
   

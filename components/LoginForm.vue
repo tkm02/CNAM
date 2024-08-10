@@ -59,6 +59,7 @@ body {
   border-radius: 10px;
   box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
   text-align: center;
+  margin-top: 60px;
 }
 
 /* Titre du formulaire */
@@ -108,7 +109,7 @@ body {
   font-size: 18px;
   font-weight: bold;
   color: #ffffff;
-  background-color: #007bff;
+  background-color: #4CAF50;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -117,7 +118,7 @@ body {
 }
 
 .login-button:hover {
-  background-color: #0056b3;
+  background-color: #40c644;
 }
 
 /* Styles pour les effets de transition */

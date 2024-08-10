@@ -117,7 +117,6 @@ watch(selected, (newSelected, oldSelected) => {
 <template>
 
     <Enregistrement/>
-    <LoginForm/>
 
   <div class="p-4">
     <div class="flex items-center space-x-4">
