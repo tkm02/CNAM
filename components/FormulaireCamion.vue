@@ -117,19 +117,18 @@ const submitForm = () => {
               {{ format(dateFin, 'd MMMM yyyy', { locale: fr }) }}
             </UButton>
             <template #panel="{ close }">
-              <DatePicker v-model="dateFin" :locale="fr" :min-date="dateDebut" @close="close" />
+              <DatePicker v-model="dateFin" :locale="fr" :min-date="dateDebut" @close="close" class="bg-white" />
             </template>
           </UPopover>
         </div>
       </div>
 
       <!-- Bouton de soumission -->
-      <div class="form-group full-width">
-        <UButton @click="submitForm" color="primary" block>Soumettre</UButton>
+      <div>
+        <UButton @click="submitForm" color="primary" block size="lg">Soumettre</UButton>
       </div>
     </div>
-  </div>
-</template>
+  </template>
 
 <style scoped>
 
