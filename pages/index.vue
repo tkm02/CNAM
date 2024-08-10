@@ -115,6 +115,9 @@ watch(selected, (newSelected, oldSelected) => {
 // });
 </script>
 <template>
+
+    <Enregistrement/>
+
   <div class="p-4">
     <div class="flex items-center space-x-4">
       <p>Nombre de kits</p>
