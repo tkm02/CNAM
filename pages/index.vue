@@ -140,10 +140,11 @@ function handlePrinterChangeInput(array: number[]) {
     0
   );
 }
+
 </script>
 
 <template>
-  <div v-if="activeStep == 1" class="px-4">
+  <div class="w-full h-screen flex flex-col justify-center items-center">
     <Enregistrement />
     <div class="flex justify-end mt-4">
       <UButton label="Suivant" @click="activeStep += 1" />

@@ -47,13 +47,15 @@ const modifyItem = (teamName: string, siteName: string) => {
 };
 </script>
 <template>
-  <div class="page-container">
-    <UPopover :popper="{ placement: 'bottom-start' }">
+
+  <UPopover :popper="{ placement: 'bottom-start' }">
+    <div class="mb-5 flex">
       <h1>Enregistrement du</h1>
       <UButton
         icon="i-heroicons-calendar-days-20-solid"
         :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })"
       />
+
       <template #panel="{ close }">
         <DatePicker v-model="selectedDate" @close="close" />
       </template>
@@ -89,6 +91,41 @@ const modifyItem = (teamName: string, siteName: string) => {
       </div>
     </UCard>
   </div>
+    </div>
+    <template #panel="{ close }">
+      <DatePicker v-model="selectedDate" @close="close" />
+    </template>
+  </UPopover>
+  <UCard :ui="{ body: { base: '' }, base: 'w-[725px]' }">
+    <div v-for="site in sites" :key="site.siteName">
+      <h2>{{ site.siteName }}</h2>
+      <UTable
+        :rows="site.equipes"
+        :columns="columns"
+        class="utable"
+        :ui="{ td: { padding: 'py-1 px-1' }, base: 'min-w-[600px]' }"
+      >
+        <template #actions-data="{ row }">
+          <UButton
+            v-if="row.hasData"
+            color="green"
+            variant="soft"
+            @click="modifyItem(row.nom, site.siteName)"
+          >
+            Modifier
+          </UButton>
+          <UButton
+            v-else
+            color="green"
+            variant="soft"
+            @click="addItem(row.nom, site.siteName)"
+          >
+            Ajouter
+          </UButton>
+        </template>
+      </UTable>
+    </div>
+  </UCard>
 </template>
 
 <style scoped>
