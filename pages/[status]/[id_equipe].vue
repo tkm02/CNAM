@@ -22,7 +22,7 @@ const activeStep = ref(1);
     </div>
   </div>
 
-  <div v-if="activeStep == 3">
+  <div>
     <FormulaireCamion />
     <div class="flex justify-end mt-4">
       <UButton label="Terminer" @click="activeStep = 1" />

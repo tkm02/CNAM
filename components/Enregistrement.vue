@@ -1,50 +1,63 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import data from "../data.json";
 import DatePicker from "./DatePicker.vue";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useManageStore } from "~/stores/manageStore";
 
 const selectedDate = ref(new Date());
+const loading = ref(false);
+const manage = useManageStore();
+const rows = ref<{}[]>([]);
+const data = useTokenStore();
 
 const columns = [
-  { key: "nom", label: "Nom de l'équipe" },
-  { key: "agents", label: "Nombre d'agents" },
-  { key: "imprimantes", label: "Nombre d'imprimantes" },
-  { key: "kits", label: "Nombre de kits" },
+  { key: "libelle", label: "Nom de l'équipe" },
+  { key: "nbr_agent", label: "Nombre d'agents" },
+  { key: "nbr_imprimante", label: "Nombre d'imprimantes" },
+  { key: "nbr_kit", label: "Nombre de kits" },
   { key: "actions", label: "Actions" },
 ];
 
-const sites = computed(() =>
-  data.responsables.map((responsable) => {
-    const site = responsable.site;
-    return {
-      responsable: responsable.nom,
-      siteName: site.nom,
-      equipes: site.equipes.map((equipe: any) => ({
-        id: equipe.id,
-        nom: equipe.nom,
-        agents: equipe.agents.length,
-        imprimantes:
-          site.equipements.find((e) => e.type === "Imprimante")?.quantite || 0,
-        kits: site.equipements.find((e) => e.type === "Kit")?.quantite || 0,
-        hasData:
-          equipe.agents.length > 0 ||
-          site.equipements.some((e) => e.quantite > 0),
-      })),
-    };
-  })
-);
+function getTodayDateYMD() {
+  const today = new Date();
 
-const addItem = (teamName: string, siteName: string) => {
-  alert(`Ajouter un élément pour l'équipe ${teamName} sur le site ${siteName}`);
-};
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0"); // Les mois sont indexés à partir de 0
+  const day = String(today.getDate()).padStart(2, "0");
 
-const modifyItem = (teamName: string, siteName: string) => {
-  alert(
-    `Modifier un élément pour l'équipe ${teamName} sur le site ${siteName}`
-  );
-};
+  return `${year}-${month}-${day}`;
+}
+
+async function getInfo(date: any) {
+  loading.value = true;
+  try {
+    const response = await manage.getStatTeam(date);
+    rows.value = Object.values(response);
+    console.log(rows.value);
+  } catch (error) {
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  console.log(getTodayDateYMD());
+
+  getInfo(getTodayDateYMD());
+});
+
+watch([selectedDate], () => {
+  const dateFormat = new Date(selectedDate.value);
+
+  const year = dateFormat.getFullYear();
+  const month = String(dateFormat.getMonth() + 1).padStart(2, "0"); // Les mois sont indexés à partir de 0
+  const day = String(dateFormat.getDate()).padStart(2, "0");
+
+  const newDate = `${year}-${month}-${day}`;
+
+  getInfo(newDate);
+});
 </script>
 
 <template>
@@ -61,34 +74,39 @@ const modifyItem = (teamName: string, siteName: string) => {
     </template>
   </UPopover>
   <UCard :ui="{ body: { base: '' }, base: 'w-[725px]' }">
-    <div v-for="site in sites" :key="site.siteName">
-      <h2>{{ site.siteName }}</h2>
-      <UTable
-        :rows="site.equipes"
-        :columns="columns"
-        class="utable"
-        :ui="{ td: { padding: 'py-1 px-1' }, base: 'min-w-[600px]' }"
-      >
-        <template #actions-data="{ row }">
-          <UButton
-            v-if="row.hasData"
-            color="green"
-            variant="soft"
-            @click="modifyItem(row.nom, site.siteName)"
-          >
-            Modifier
-          </UButton>
-          <UButton
-            v-else
-            color="green"
-            variant="soft"
-            @click="addItem(row.nom, site.siteName)"
-          >
-            Ajouter
-          </UButton>
-        </template>
-      </UTable>
-    </div>
+    <!-- <div v-for="site in sites" :key="site.siteName">
+      <h2>{{ site.siteName }}</h2> -->
+    <UTable
+      :loading="loading"
+      :rows="rows"
+      :columns="columns"
+      class="utable"
+      :ui="{ td: { padding: 'py-1 px-1' }, base: 'min-w-[600px]' }"
+    >
+      <template #libelle-data="{ row }">
+        <p class="custom-lowercase">{{ row.libelle }}</p>
+      </template>
+      <template #actions-data="{ row }">
+        <UButton
+          v-if="
+            row.nombre_agent > 0 && row.nbr_imprimante > 0 && row.nbr_kit > 0
+          "
+          color="orange"
+          variant="solid"
+        >
+          Modifier
+        </UButton>
+        <UButton
+          v-else
+          color="primary"
+          variant="solid"
+          @click="navigateTo(`/add/${row.id_equipe}`)"
+        >
+          Ajouter
+        </UButton>
+      </template>
+    </UTable>
+    <!-- </div> -->
   </UCard>
 </template>
 
@@ -166,5 +184,12 @@ h2 {
 
 .action-link:hover {
   background-color: #45a049;
+}
+
+.custom-lowercase::first-letter {
+  text-transform: capitalize;
+}
+.custom-lowercase {
+  text-transform: lowercase;
 }
 </style>
