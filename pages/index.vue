@@ -2,5 +2,5 @@
 
 </script>
 <template>
-    <h1>TEST</h1>
+    <Enregistrement/>
 </template>
