@@ -128,8 +128,10 @@ const submitForm = () => {
         <UButton @click="submitForm" color="primary" block size="lg">Soumettre</UButton>
       </div>
     </div>
-  </template>
+    </div>
 
+  </template>
+ 
 <style scoped>
 
 .btn-date-content{
