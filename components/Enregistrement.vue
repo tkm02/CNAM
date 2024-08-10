@@ -46,8 +46,8 @@ const modifyItem = (teamName: string, siteName: string) => {
   );
 };
 </script>
-
 <template>
+
   <UPopover :popper="{ placement: 'bottom-start' }">
     <div class="mb-5 flex">
       <h1>Enregistrement du</h1>
@@ -55,6 +55,42 @@ const modifyItem = (teamName: string, siteName: string) => {
         icon="i-heroicons-calendar-days-20-solid"
         :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })"
       />
+
+      <template #panel="{ close }">
+        <DatePicker v-model="selectedDate" @close="close" />
+      </template>
+    </UPopover>
+    <UCard :ui="{body:{base:''}, base:'w-[725px]'}" style="margin: 10px 0;">
+      <div v-for="site in sites" :key="site.siteName">
+        <h2>{{ site.siteName }}</h2>
+        <UTable
+          :rows="site.equipes"
+          :columns="columns"
+          class="utable"
+          :ui="{ td: { padding: 'py-1 px-1' }, base:'min-w-[600px]' }"
+        >
+          <template #actions-data="{ row }">
+            <UButton
+              v-if="row.hasData"
+              color="green"
+              variant="soft"
+              @click="modifyItem(row.nom, site.siteName)"
+            >
+              Modifier
+            </UButton>
+            <UButton
+              v-else
+              color="green"
+              variant="soft"
+              @click="addItem(row.nom, site.siteName)"
+            >
+              Ajouter
+            </UButton>
+          </template>
+        </UTable>
+      </div>
+    </UCard>
+  </div>
     </div>
     <template #panel="{ close }">
       <DatePicker v-model="selectedDate" @close="close" />
@@ -93,33 +129,23 @@ const modifyItem = (teamName: string, siteName: string) => {
 </template>
 
 <style scoped>
-/* Vos styles existants ... */
-</style>
+.page-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
 
-<style scoped>
-/* Styles globaux pour le tableau */
 h1 {
   font-size: 1.5em;
   text-align: center;
   margin: 0 5px;
 }
+
 h2 {
   font-weight: bold;
-}
-.container-enregistrement {
-  padding: 20px 25px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-.table-container {
-  margin-bottom: 2rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 16px;
-  width: 80%;
-  margin: 10px auto;
+  text-align: center;
 }
 
 .utable {
@@ -154,6 +180,7 @@ h2 {
 .add-button:hover {
   background-color: #45a049;
 }
+
 .action-link {
   display: inline-block;
   background-color: #4caf50;
