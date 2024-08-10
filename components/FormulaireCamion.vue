@@ -87,14 +87,14 @@ const submitForm = () => {
           </UButton>
   
           <template #panel="{ close }">
-            <DatePicker v-model="dateFin" :locale="fr" @close="close" />
+            <DatePicker v-model="dateFin" :locale="fr" @close="close" class="bg-white" />
           </template>
         </UPopover>
       </div>
   
       <!-- Bouton de soumission -->
-      <div class="form-group">
-        <UButton @click="submitForm" color="primary">Soumettre</UButton>
+      <div>
+        <UButton @click="submitForm" color="primary" block size="lg">Soumettre</UButton>
       </div>
     </div>
   </template>

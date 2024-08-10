@@ -3,9 +3,11 @@
 <template>
     <UModal>
         <UCard>
-          <div class="space-y-2">
-            <p>This modal was opened programmatically !</p>
-          </div>
+          <template #header>
+            <h1>Donnez le motif</h1>
+          </template>
+          <UInput />
+          <UButton label="Envoyer" block />
         </UCard>
       </UModal>
 </template>
