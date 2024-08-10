@@ -4,7 +4,25 @@ import { format, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 // Données pour la localité avec autocomplétion
-const localites = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'San Pedro', 'Daloa'];
+const localites = [
+  'Abidjan', 'Bouaké', 'Yamoussoukro', 'San Pedro', 'Daloa', 'Grand-Bassam', 
+  'Jacqueville', 'Dabou', 'Alépé', 'Bingerville', 'Songon', 'Bonoua',
+  'Sassandra', 'Tabou', 'Soubré', 'Séguéla', 'Mankono', 'Kani', 'Odienné',
+  'Minignan', 'Bondoukou', 'Bouna', 'Tanda', 'Man', 'Danané', 'Duékoué',
+  'Bangolo', 'Guiglo', 'Toulepleu', 'Bloléquin', 'Katiola', 'Béoumi', 
+  'Dabakala', 'Korhogo', 'Ferkessédougou', 'Ouangolodougou', 'Boundiali', 
+  'Tingréla', 'Gagnoa', 'Oumé', 'Divo', 'Lakota', 'Toumodi', 'Djékanou',
+  'Tiébissou', 'Abengourou', 'Agnibilékrou', 'Adzopé', 'Aboisso', 'Tiapoum',
+  'Vavoua', 'Issia', 'Zoukougbeu', 'Dimbokro', 'Daoukro', 'Bocanda', 'Bouaflé',
+  'Sinfra', 'Zuénoula', 'Touba', 'Koro', 'Ouaninou', 'Sakassou', 'Botro',
+  'Sinématiali', 'Dikodougou', 'M’bengué', 'Niakaramandougou', 'Bettié',
+  'Guiglo', 'Toulepleu', 'Bloléquin', 'Bangolo', 'Kouibly', 'Bocanda', 
+  'Kouassi-Kouassikro', 'Bongouanou', 'Arrah', 'M’Batto', 'Grand-Béréby',
+  'Akoupé', 'Afféry', 'Agboville', 'Tiassalé', 'Taabo', 'Sikensi', 'Kong',
+  'Mankono', 'Kounahiri', 'Doropo', 'Nassian', 'Sandégué', 'Toumodi',
+  'Tiébissou', 'Djékanou', 'Dabou', 'Jacqueville', 'Grand-Bassam', 'Bonoua'
+];
+
 const selectedLocalite = ref('');
 
 // Valeurs du formulaire
