@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ModalMotifComponent } from "#components";
 
+definePageMeta({
+  middleware: "guest",
+});
+
 const columns = [
   {
     key: "name",
@@ -141,12 +145,12 @@ watch(
 
     <div class="mt-4">
       <p>Liste des kits</p>
-      <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base:'w-[656px]' }">
+      <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[656px]' }">
         <UTable
           v-model="selected"
           :rows="people"
           :columns="columns"
-          :ui="{ td: { padding: 'py-1 px-2' }, base:'min-w-[400px]' }"
+          :ui="{ td: { padding: 'py-1 px-2' }, base: 'min-w-[400px]' }"
         >
           <template #actions-data="{ row, index }">
             <UInput
