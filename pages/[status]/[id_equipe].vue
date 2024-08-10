@@ -22,10 +22,10 @@ const activeStep = ref(1);
     </div>
   </div>
 
-  <div>
+  <!-- <div>
     <FormulaireCamion />
     <div class="flex justify-end mt-4">
       <UButton label="Terminer" @click="activeStep = 1" />
     </div>
-  </div>
+  </div> -->
 </template>
