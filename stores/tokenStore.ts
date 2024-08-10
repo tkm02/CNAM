@@ -5,6 +5,7 @@ export const useTokenStore = defineStore("token", {
       id: null,
       loggedIn: false,
       data: null,
+      siteId: null,
     };
   },
   persist: true,
@@ -12,7 +13,7 @@ export const useTokenStore = defineStore("token", {
     getStatus: (state) => state.loggedIn,
     getToken: (state) => state.access_token,
     getId: (state) => state.id,
-    getData: (state) => state.data,
+    getSiteId: (state) => state.siteId,
   },
   actions: {
     setToken(token: any) {
@@ -24,17 +25,15 @@ export const useTokenStore = defineStore("token", {
       this.id = id;
     },
 
-    setData(data: any) {
-      this.data = data;
+    setSiteId(id: any) {
+      this.siteId = id;
     },
 
     deleteToken() {
       this.access_token = null;
       this.loggedIn = false;
-    },
-
-    deleteId() {
       this.id = null;
+      this.siteId = null;
     },
   },
 });
