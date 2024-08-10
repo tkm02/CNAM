@@ -13,12 +13,17 @@
     "@nuxt/icon": "^1.4.5",
     "@nuxt/ui": "^2.18.4",
     "@nuxtjs/tailwindcss": "^6.12.1",
+    "@pinia/nuxt": "^0.5.3",
+    "axios": "^1.7.3",
     "date-fns": "^2.30.0",
     "nuxt": "^3.12.4",
+    "pinia": "^2.2.1",
     "v-calendar": "^3.1.2",
-    "vue": "latest"
+    "vue": "latest",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@nuxtjs/color-mode": "^3.4.2"
+    "@nuxtjs/color-mode": "^3.4.2",
+    "@pinia-plugin-persistedstate/nuxt": "^1.2.1"
   }
 }

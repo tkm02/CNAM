@@ -7,7 +7,12 @@ export default defineNuxtConfig({
     "@nuxt/icon",
     "@nuxtjs/tailwindcss",
     "@nuxtjs/color-mode",
+    '@pinia/nuxt',
+    '@pinia-plugin-persistedstate/nuxt'
   ],
+
+  components: { global: true, dirs: ['~/components'] },
+  
   tailwindcss: {
     cssPath: ["~/assets/css/tailwind.css", { injectPosition: "first" }],
     configPath: "tailwind.config",
@@ -28,10 +33,14 @@ export default defineNuxtConfig({
     storageKey: "nuxt-color-mode",
   },
 
-  components: [
-    {
-      path: "~/components",
-      pathPrefix: false,
-    },
-  ],
+  runtimeConfig:{
+    public:{
+      apiBase: "http://192.168.252.170:8000/api"
+    }
+  },
+
+  imports: {
+    dirs: ['./stores', './utils']
+  },
+
 });
