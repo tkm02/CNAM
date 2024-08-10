@@ -49,23 +49,25 @@ const modifyItem = (teamName: string, siteName: string) => {
 
 <template>
   <UPopover :popper="{ placement: 'bottom-start' }">
-    <h1>Enregistrement du</h1>
-    <UButton
-      icon="i-heroicons-calendar-days-20-solid"
-      :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })"
-    />
+    <div class="mb-5 flex">
+      <h1>Enregistrement du</h1>
+      <UButton
+        icon="i-heroicons-calendar-days-20-solid"
+        :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })"
+      />
+    </div>
     <template #panel="{ close }">
       <DatePicker v-model="selectedDate" @close="close" />
     </template>
   </UPopover>
-  <UCard :ui="{body:{base:''}, base:'w-[725px]'}">
+  <UCard :ui="{ body: { base: '' }, base: 'w-[725px]' }">
     <div v-for="site in sites" :key="site.siteName">
       <h2>{{ site.siteName }}</h2>
       <UTable
         :rows="site.equipes"
         :columns="columns"
         class="utable"
-        :ui="{ td: { padding: 'py-1 px-1' }, base:'min-w-[600px]' }"
+        :ui="{ td: { padding: 'py-1 px-1' }, base: 'min-w-[600px]' }"
       >
         <template #actions-data="{ row }">
           <UButton
