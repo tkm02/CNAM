@@ -1,27 +1,49 @@
 <script setup lang="ts">
+const activeStep = ref(0);
+const length = ref(1);
+const dataStore = useDataStore();
 
-const activeStep = ref(1);
+const nextStep = () => {
+  if (activeStep.value < length.value) {
+    activeStep.value++;
+  } else {
+    console.log(dataStore.collectedData);
+  }
+};
 
-// Synchroniser les inputValue avec mainInputValue
-// watch(mainInputValue, (newValue, oldValue) => {
-//   console.log(mainInputValue);
-//   if (newValue > 0) {
-//     people.map((person) => {
-//       inputValuesArray.value = people.map((person) => person.inputValue);
-//       console.log(person.inputValue);
-//     });
-//   }
-// });
+const previousStep = () => {
+  if (activeStep.value >= length.value) {
+    activeStep.value--;
+  } else {
+    navigateTo("/");
+    
+  }
+};
 </script>
 
 <template>
-  <div class="p-4" v-if="activeStep == 1">
-    <TableWithoutInput />
-    <div class="flex justify-end mt-4">
-      <UButton label="Suivant" @click="activeStep += 1" />
+  <div class="w-full flex justify-center mt-5">
+    <div class="grid grid-cols-2 gap-4" v-show="activeStep === 0">
+      <TableWithoutInput />
+
+      <div></div>
+      <div class="flex justify-between h-[40px] w-full"></div>
+    </div>
+
+    <div
+      class="w-3/6 flex flex-col justify-center space-y-4"
+      v-show="activeStep === 1"
+    >
+      <BilanUser />
     </div>
   </div>
-
+  <div class="flex justify-center space-x-4 mt-5">
+    <UButton label="Retour" color="gray" @click="previousStep" />
+    <UButton
+      :label="activeStep === length ? 'Terminer' : 'Suivant'"
+      @click="nextStep"
+    />
+  </div>
   <!-- <div>
     <FormulaireCamion />
     <div class="flex justify-end mt-4">

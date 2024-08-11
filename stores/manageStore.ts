@@ -24,7 +24,7 @@ export const useManageStore = defineStore("manage", {
         );
 
         const response = await apiWithoutAuth.get(
-          `v1/listeEquipementBySite/${id}`
+          `v1/listeEquipementBySite/2`
         );
         return response.data;
       } catch (error) {

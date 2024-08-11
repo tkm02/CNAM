@@ -9,15 +9,19 @@ const selectedDate = ref(new Date());
 const loading = ref(false);
 const manage = useManageStore();
 const rows = ref<{}[]>([]);
-const data = useTokenStore();
+const token = useTokenStore();
+const datas = ref<{}[]>([]);
 
 const columns = [
+  { key: "id_equipe" },
   { key: "libelle", label: "Nom de l'équipe" },
   { key: "nbr_agent", label: "Nombre d'agents" },
   { key: "nbr_imprimante", label: "Nombre d'imprimantes" },
   { key: "nbr_kit", label: "Nombre de kits" },
   { key: "actions", label: "Actions" },
 ];
+
+let data: any = [];
 
 function getTodayDateYMD() {
   const today = new Date();
@@ -29,21 +33,39 @@ function getTodayDateYMD() {
   return `${year}-${month}-${day}`;
 }
 
+
+
 async function getInfo(date: any) {
   loading.value = true;
   try {
     const response = await manage.getStatTeam(date);
-    rows.value = Object.values(response);
-    console.log(rows.value);
+    if (response.length == 0) {
+      const element = await manage.getAgentsByEquipe(token.getSiteId);
+
+      console.log(element);
+
+      data = Object.values(element).map((e: any) => ({
+        id_equipe: e.id_equipe,
+        libelle: e.equipe_name, // Remplacez 'nom_equipe' par la clé appropriée si elle est différente
+        nbr_agent: 0,
+        nbr_imprimante: 0,
+        nbr_kit: 0,
+      }));
+
+      rows.value = Object.values(data);
+    }
   } catch (error) {
+    console.log(error);
   } finally {
     loading.value = false;
   }
 }
 
-onMounted(() => {
-  console.log(getTodayDateYMD());
+function reidirection(id: any, id_equipe: any) {
+  return navigateTo(`/${id}/${id_equipe}`);
+}
 
+onMounted(() => {
   getInfo(getTodayDateYMD());
 });
 
@@ -58,9 +80,10 @@ watch([selectedDate], () => {
 
   getInfo(newDate);
 });
-</script>
-<template>
 
+</script>
+
+<template>
   <UPopover :popper="{ placement: 'bottom-start' }">
     <div class="mb-5 flex">
       <h1>Enregistrement du</h1>
@@ -68,48 +91,12 @@ watch([selectedDate], () => {
         icon="i-heroicons-calendar-days-20-solid"
         :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })"
       />
-
-      <template #panel="{ close }">
-        <DatePicker v-model="selectedDate" @close="close" />
-      </template>
-    </UPopover>
-    <UCard :ui="{body:{base:''}, base:'w-[725px]'}" style="margin: 10px 0;">
-      <div v-for="site in sites" :key="site.siteName">
-        <h2>{{ site.siteName }}</h2>
-        <UTable
-          :rows="site.equipes"
-          :columns="columns"
-          class="utable"
-          :ui="{ td: { padding: 'py-1 px-1' }, base:'min-w-[600px]' }"
-        >
-          <template #actions-data="{ row }">
-            <UButton
-              v-if="row.hasData"
-              color="green"
-              variant="soft"
-              @click="modifyItem(row.nom, site.siteName)"
-            >
-              Modifier
-            </UButton>
-            <UButton
-              v-else
-              color="green"
-              variant="soft"
-              @click="addItem(row.nom, site.siteName)"
-            >
-              Ajouter
-            </UButton>
-          </template>
-        </UTable>
-      </div>
-    </UCard>
-  </div>
     </div>
     <template #panel="{ close }">
       <DatePicker v-model="selectedDate" @close="close" />
     </template>
   </UPopover>
-  <UCard :ui="{ body: { base: '' }, base: 'w-[725px]' }">
+  <UCard :ui="{ body: { base: '' }, base: '' }">
     <!-- <div v-for="site in sites" :key="site.siteName">
       <h2>{{ site.siteName }}</h2> -->
     <UTable
@@ -119,6 +106,9 @@ watch([selectedDate], () => {
       class="utable"
       :ui="{ td: { padding: 'py-1 px-1' }, base: 'min-w-[600px]' }"
     >
+      <template #id_equipe-data="{ row }">
+        <p class="hidden">{{ row.id_equipe }}</p>
+      </template>
       <template #libelle-data="{ row }">
         <p class="custom-lowercase">{{ row.libelle }}</p>
       </template>
@@ -136,7 +126,7 @@ watch([selectedDate], () => {
           v-else
           color="primary"
           variant="solid"
-          @click="navigateTo(`/add/${row.id_equipe}`)"
+          @click="reidirection(row.id_equipe, token.getSiteId)"
         >
           Ajouter
         </UButton>
@@ -147,23 +137,33 @@ watch([selectedDate], () => {
 </template>
 
 <style scoped>
-.page-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
+/* Vos styles existants ... */
+</style>
 
+<style scoped>
+/* Styles globaux pour le tableau */
 h1 {
   font-size: 1.5em;
   text-align: center;
   margin: 0 5px;
 }
-
 h2 {
   font-weight: bold;
-  text-align: center;
+}
+.container-enregistrement {
+  padding: 20px 25px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.table-container {
+  margin-bottom: 2rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  width: 80%;
+  margin: 10px auto;
 }
 
 .utable {
@@ -198,7 +198,6 @@ h2 {
 .add-button:hover {
   background-color: #45a049;
 }
-
 .action-link {
   display: inline-block;
   background-color: #4caf50;

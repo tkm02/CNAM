@@ -4,8 +4,9 @@ export const useTokenStore = defineStore("token", {
       access_token: null,
       id: null,
       loggedIn: false,
-      data: null,
+      data: [],
       siteId: null,
+      localites: [],
     };
   },
   persist: true,
@@ -14,6 +15,8 @@ export const useTokenStore = defineStore("token", {
     getToken: (state) => state.access_token,
     getId: (state) => state.id,
     getSiteId: (state) => state.siteId,
+    getLocalites: (state) => state.localites,
+    getData: (state) => state.data,
   },
   actions: {
     setToken(token: any) {
@@ -21,8 +24,16 @@ export const useTokenStore = defineStore("token", {
       this.loggedIn = true;
     },
 
+    setLocalities(data: any) {
+      this.localites = JSON.parse(data);
+    },
+
     setId(id: any) {
       this.id = id;
+    },
+
+    setData(data: any) {
+      this.data = data;
     },
 
     setSiteId(id: any) {
