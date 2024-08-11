@@ -10,7 +10,7 @@ const loading = ref(false);
 const manage = useManageStore();
 const rows = ref<{}[]>([]);
 const token = useTokenStore();
-const datas = ref<{}[]>([]);
+const dataStore = useDataStore();
 
 const columns = [
   { key: "id_equipe" },
@@ -18,7 +18,7 @@ const columns = [
   { key: "nbr_agent", label: "Nombre d'agents" },
   { key: "nbr_imprimante", label: "Nombre d'imprimantes" },
   { key: "nbr_kit", label: "Nombre de kits" },
-  { key: "actions", label: "Actions" },
+  { key: "actions", label: "Rapports" }, 
 ];
 
 let data: any = [];
@@ -33,27 +33,72 @@ function getTodayDateYMD() {
   return `${year}-${month}-${day}`;
 }
 
+const formatDate = (date: Date): string => {
+  return format(date, "yyyy-MM-dd HH:mm:ss");
+};
 
+const dateFormat = (date: Date):string =>{
+  return format(date, "yyyy-MM-dd")
+}
 
-async function getInfo(date: any) {
+const loadTableData = async (date: string) => {
+  dataStore.updateData({ date });
+};
+
+async function getInfo(date: string) {
   loading.value = true;
   try {
-    const response = await manage.getStatTeam(date);
-    if (response.length == 0) {
-      const element = await manage.getAgentsByEquipe(token.getSiteId);
+    const response = await manage.getStatTeam(token.getSiteId, date);
 
-      console.log(element);
+    // Récupérer toutes les équipes disponibles
+    const allTeams = await manage.getAgentsByEquipe(token.getSiteId);
+    
+    // Préparer un tableau pour stocker les équipes mises à jour
+    const updatedTeams = new Map<number, any>();
 
-      data = Object.values(element).map((e: any) => ({
+    if (response.length === 0) {
+      // Lorsque la réponse est vide, préremplir toutes les équipes avec des valeurs à zéro
+      data = Object.values(allTeams).map((e: any) => ({
         id_equipe: e.id_equipe,
-        libelle: e.equipe_name, // Remplacez 'nom_equipe' par la clé appropriée si elle est différente
+        libelle: e.equipe_name,
         nbr_agent: 0,
         nbr_imprimante: 0,
         nbr_kit: 0,
       }));
+    } else {
+      // Lorsque la réponse contient des données, mettez à jour les équipes existantes
+      const responseTeams = response.map((e: any) => ({
+        id_equipe: e.id_equipe,
+        libelle: e.libelle,
+        nbr_agent: e.nbr_agent,
+        nbr_imprimante: e.nbr_imprimante,
+        nbr_kit: e.nbr_kit,
+      }));
 
-      rows.value = Object.values(data);
+      responseTeams.forEach((team: any) => {
+        updatedTeams.set(team.id_equipe, team);
+      });
+
+      // Ajoutez les équipes sans données et préremplissez-les avec des valeurs à zéro
+      Object.values(allTeams).forEach((e: any) => {
+        if (!updatedTeams.has(e.id_equipe)) {
+          updatedTeams.set(e.id_equipe, {
+            id_equipe: e.id_equipe,
+            libelle: e.equipe_name,
+            nbr_agent: 0,
+            nbr_imprimante: 0,
+            nbr_kit: 0,
+          });
+        }
+      });
+
+      data = Array.from(updatedTeams.values());
     }
+
+    // Trier les équipes par ordre alphabétique basé sur 'libelle'
+    data.sort((a: any, b: any) => a.libelle.localeCompare(b.libelle));
+
+    rows.value = data;
   } catch (error) {
     console.log(error);
   } finally {
@@ -61,26 +106,34 @@ async function getInfo(date: any) {
   }
 }
 
+
+
+watch(
+  () => selectedDate.value,
+  (newDate) => {
+    const formattedDate = formatDate(newDate);
+    getInfo(formattedDate);
+    loadTableData(formattedDate);
+  },
+  { immediate: true } // Pour charger les données immédiatement lors du montage
+);
+
 function reidirection(id: any, id_equipe: any) {
   return navigateTo(`/${id}/${id_equipe}`);
 }
 
 onMounted(() => {
-  getInfo(getTodayDateYMD());
+  const todayDate = new Date();
+
+  const formattedDate = formatDate(todayDate);
+  getInfo(dateFormat(todayDate)).then(() => {
+    loadTableData(formattedDate);
+  });
 });
 
 watch([selectedDate], () => {
-  const dateFormat = new Date(selectedDate.value);
-
-  const year = dateFormat.getFullYear();
-  const month = String(dateFormat.getMonth() + 1).padStart(2, "0"); // Les mois sont indexés à partir de 0
-  const day = String(dateFormat.getDate()).padStart(2, "0");
-
-  const newDate = `${year}-${month}-${day}`;
-
-  getInfo(newDate);
+  getInfo(formatDate);
 });
-
 </script>
 
 <template>
@@ -97,8 +150,8 @@ watch([selectedDate], () => {
     </template>
   </UPopover>
   <UCard :ui="{ body: { base: '' }, base: '' }">
-    <!-- <div v-for="site in sites" :key="site.siteName">
-      <h2>{{ site.siteName }}</h2> -->
+    <!-- <div v-for="site in sites" :key="site.siteName"> -->
+      <h2>{{ token.getLocalites }}</h2>
     <UTable
       :loading="loading"
       :rows="rows"
@@ -115,10 +168,11 @@ watch([selectedDate], () => {
       <template #actions-data="{ row }">
         <UButton
           v-if="
-            row.nombre_agent > 0 && row.nbr_imprimante > 0 && row.nbr_kit > 0
+            row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
           "
           color="orange"
           variant="solid"
+          @click="reidirection(row.id_equipe, token.getSiteId)"
         >
           Modifier
         </UButton>

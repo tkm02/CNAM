@@ -1,7 +1,14 @@
 <script setup lang="ts">
 const token = useTokenStore();
 const links = [
-  [],
+  [
+    {
+      label:token.getLocalites
+    },
+    {
+      label:`Site ${token.getSiteId}`
+    }
+  ],
   [
     {
       labelClass: "deco",

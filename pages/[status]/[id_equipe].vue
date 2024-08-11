@@ -3,11 +3,25 @@ const activeStep = ref(0);
 const length = ref(1);
 const dataStore = useDataStore();
 
+async function handleSubmit() {
+  try {
+    const response = await dataStore.addData(dataStore.collectedData);
+
+    if (response.message == 201) {
+      navigateTo("/");
+    } else {
+      alert("Une erreur est survenue !");
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 const nextStep = () => {
   if (activeStep.value < length.value) {
     activeStep.value++;
   } else {
-    console.log(dataStore.collectedData);
+    handleSubmit();
   }
 };
 
@@ -16,7 +30,6 @@ const previousStep = () => {
     activeStep.value--;
   } else {
     navigateTo("/");
-    
   }
 };
 </script>

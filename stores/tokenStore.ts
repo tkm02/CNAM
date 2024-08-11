@@ -6,7 +6,7 @@ export const useTokenStore = defineStore("token", {
       loggedIn: false,
       data: [],
       siteId: null,
-      localites: [],
+      localites: null,
     };
   },
   persist: true,
@@ -25,7 +25,7 @@ export const useTokenStore = defineStore("token", {
     },
 
     setLocalities(data: any) {
-      this.localites = JSON.parse(data);
+      this.localites = data;
     },
 
     setId(id: any) {

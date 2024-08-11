@@ -1,6 +1,6 @@
 export const useManageStore = defineStore("manage", {
   actions: {
-    async getStatTeam(date: any) {
+    async getStatTeam(idSite:any, date: any) {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
@@ -8,7 +8,11 @@ export const useManageStore = defineStore("manage", {
           token
         );
 
-        const response = await apiWithoutAuth.get(`v1/recap/1/${date}`);
+        const response = await apiWithoutAuth.get(
+          `v1/recap/${idSite}/${date}`
+        );
+       console.log(response.data);
+       
         return response.data;
       } catch (error) {
         throw error;
@@ -23,9 +27,7 @@ export const useManageStore = defineStore("manage", {
           token
         );
 
-        const response = await apiWithoutAuth.get(
-          `v1/listeEquipementBySite/2`
-        );
+        const response = await apiWithoutAuth.get(`v1/listeEquipementBySite/${id}`);
         return response.data;
       } catch (error) {
         throw error;

@@ -17,7 +17,7 @@ const columns = [
   },
   {
     key: "nom_equipement",
-    label: "Nom de l'équipement",
+    label: "Type d'equipement",
   },
   {
     key: "numero_serie",
@@ -36,15 +36,23 @@ const loading = ref(false);
 const itemToRemove = ref<any>(null);
 const removalReason = ref("");
 
+const state = reactive({
+  message: undefined,
+  motif: undefined,
+});
+
 // const loadTableData = async (data1: number, data2: number) => {
 //   dataStore.updateData({ nbr_equipement: data1 + data2 });
 // };
 
-const loadTableData = async (data1: number, data2: number) => {
-  console.log("Data to update:", { nbr_equipement: data1 + data2 }); // Log pour vérifier les données
-  dataStore.updateData({ nbr_equipement: data1 + data2 });
+const loadTableData = async (nbr_kit: number, nbr_imp: number) => {
+  console.log("Data to update:", { nbr_equipement: nbr_kit + nbr_imp }); // Log pour vérifier les données
+  dataStore.updateData({
+    nbr_equipement: nbr_kit + nbr_imp,
+    nbr_Imp: nbr_imp,
+    nbr_kit: nbr_kit,
+  });
 };
-
 
 async function getDataKit() {
   loading.value = true;
@@ -84,6 +92,14 @@ watch(
   { deep: true }
 );
 
+const addEquipmentDetail = (motif: any, id: any) => {
+  const newDetail = {
+    commentaire: motif,
+    equipement_id_fk: id,
+  };
+  dataStore.addDetailEq(newDetail);
+};
+
 watch(
   () => selectedImp.value,
   (newSelected, oldSelected) => {
@@ -107,9 +123,9 @@ onMounted(() => {
     mainInputValue.value = selected.value.length;
     secondInputValue.value = selectedImp.value.length;
     loadTableData(mainInputValue.value, secondInputValue.value);
+  });
 });
 
-})
 function closeModal() {
   showModal.value = false;
   itemToRemove.value = null;
@@ -129,16 +145,16 @@ function confirmRemoval() {
     );
   }
 
-  showModal.value = false;
-  itemToRemove.value = null;
-  removalReason.value = "";
+  addEquipmentDetail(state.message, itemToRemove.value.id_equipement);
+
+   closeModal();
 }
 </script>
 
 <template>
   <div>
     <div class="flex items-center space-x-4">
-      <p>Nombre de kits</p>
+      <p style="font-weight: bold;">Nombre de kits</p>
       <UInput
         v-model="mainInputValue"
         class="w-[70px]"
@@ -148,7 +164,7 @@ function confirmRemoval() {
     </div>
 
     <div class="mt-4">
-      <p>Liste des kits utilisés pour la date du 11/08/2024</p>
+      <p>Liste des kits utilisés à la date du 11/08/2024</p>
       <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[450px]' }">
         <UTable
           :loading="loading"
@@ -167,7 +183,7 @@ function confirmRemoval() {
 
   <div>
     <div class="flex items-center space-x-4">
-      <p>Nombre d'imprimantes</p>
+      <p style="font-weight: bold;">Nombre d'imprimantes</p>
       <UInput
         v-model="secondInputValue"
         class="w-[70px]"
@@ -177,7 +193,7 @@ function confirmRemoval() {
     </div>
 
     <div class="mt-4">
-      <p>Liste des imprimantes utilisées pour la date du 11/08/2024</p>
+      <p>Liste des imprimantes utilisées à la date du 11/08/2024</p>
       <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[450px]' }">
         <UTable
           :loading="loading"
@@ -198,28 +214,34 @@ function confirmRemoval() {
     <UCard>
       <template #header>
         <h3 class="text-base font-semibold leading-6 text-gray-900">
-          Pourquoi voulez-vous retirer cet equipement ?
+          Pour quel motif cet équipement n'a pas été utilisé ?
         </h3>
       </template>
       <div class="mt-2">
         <p v-if="itemToRemove">Motif de retrait {{ itemToRemove.name }}</p>
-        <USelect
-          color="primary"
-          variant="outline"
-          :options="['panne', 'maintenance']"
-          model-value="United States"
-        />
-        <UInput
-          v-model="removalReason"
-          type="text"
-          placeholder="Entrez le motif ici"
-          class="mt-2 w-full p-2 border border-gray-300 rounded-md"
-        />
+        <UForm :state="state">
+          <USelect
+            color="primary"
+            variant="outline"
+            :options="['panne', 'maintenance']"
+            v-model="state.motif"
+          />
+          <UTextarea
+            v-model="state.message"
+            type="text"
+            placeholder="commentaire..."
+            class="mt-2 w-full border border-gray-300 rounded-md"
+          />
+        </UForm>
       </div>
       <template #footer>
         <div class="mt-4 flex justify-end space-x-2">
           <UButton color="gray" label="Annuler" @click="closeModal" />
-          <UButton color="red" label="Confirmer" @click="confirmRemoval" />
+          <UButton
+            color="red"
+            label="Confirmer"
+            @click="confirmRemoval()"
+          />
         </div>
       </template>
     </UCard>

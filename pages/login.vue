@@ -38,6 +38,7 @@ async function handleSubmit(event: FormSubmitEvent<Schema>) {
     token.setToken(response.data.access_token);
     token.setId(response.data.data.id);
     token.setSiteId(response.data.data.id_site)
+    token.setLocalities(response.data.data.localite)
 
     console.log(response.data);
 

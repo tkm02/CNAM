@@ -41,8 +41,6 @@ async function loadData() {
 }
 
 onMounted(() => {
-  dataStore.setData(data);
-
   loadData();
 });
 </script>
