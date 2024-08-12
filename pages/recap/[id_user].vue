@@ -1,5 +1,30 @@
 <template>
   <v-container>
+    <div class="filters">
+      <USelect
+        v-model="selectedRegion"
+        :options="regions"
+        placeholder="Sélectionnez une région"
+      />
+      <USelect
+        v-model="selectedSite"
+        :options="sites"
+        placeholder="Sélectionnez un site"
+      />
+      <USelect
+        v-model="selectedActivite"
+        :options="activites"
+        placeholder="Sélectionnez une activité"
+      />
+      <USelect
+        v-model="selectedEquipe"
+        :options="equipes"
+        placeholder="Sélectionnez une équipe"
+      />
+      <UDatePicker v-model="startDate" placeholder="Date de début" />
+      <UDatePicker v-model="endDate" placeholder="Date de fin" />
+    </div>
+
     <div class="table-container">
       <v-simple-table class="styled-table">
         <thead>
@@ -31,7 +56,7 @@
           </tr>
         </thead>
         <tbody>
-          <template v-for="region in stats" :key="region.region">
+          <template v-for="region in filteredStats" :key="region.region">
             <tr
               v-for="(equipe, index) in region.equipes"
               :key="`${region.region}-${equipe.nom}-${index}`"
@@ -76,19 +101,16 @@
       </v-simple-table>
 
       <div class="export-button-container">
-        <UButton @click="exportToExcel" color="primary"
-          >Exporter en XLS</UButton
-        >
+        <UButton @click="exportToExcel" color="primary">Exporter en XLS</UButton>
       </div>
     </div>
   </v-container>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import * as XLSX from "xlsx";
 const dataStore = useDataStore();
-
 interface Horaires {
   [key: string]: number;
 }
@@ -98,6 +120,7 @@ interface Stat {
   nb_op: number;
   nb_kit: number;
   nb_imp: number;
+  obj: number;
   horaires: Horaires;
 }
 
@@ -109,7 +132,7 @@ interface Equipe {
 interface Region {
   region: string;
   site_in_situ: string;
-  activites: string;
+  activite: string;
   equipes: Equipe[];
 }
 
@@ -117,6 +140,35 @@ const dates = ref<string[]>([]);
 const times = ref<string[]>([]);
 const stats = ref<Region[]>([]);
 const route = useRoute();
+
+const selectedRegion = ref("");
+const selectedSite = ref("");
+const selectedActivite = ref("");
+const selectedEquipe = ref("");
+const startDate = ref("");
+const endDate = ref("");
+
+// Computed properties pour les options des filtres
+const regions = computed(() => [...new Set(stats.value.map(s => s.region))]);
+const sites = computed(() => [...new Set(stats.value.map(s => s.site_in_situ))]);
+const activites = computed(() => [...new Set(stats.value.flatMap(s => s.activite.split('\n')))]);
+const equipes = computed(() => [...new Set(stats.value.flatMap(s => s.equipes.map(e => e.nom)))]);
+
+// Filtered stats
+const filteredStats = computed(() => {
+  return stats.value.filter(s => 
+    (!selectedRegion.value || s.region === selectedRegion.value) &&
+    (!selectedSite.value || s.site_in_situ === selectedSite.value) &&
+    (!selectedActivite.value || s.activite.includes(selectedActivite.value)) &&
+    (!selectedEquipe.value || s.equipes.some(e => e.nom === selectedEquipe.value)) &&
+    (!startDate.value || !endDate.value || s.equipes.some(e => 
+      e.stats.some(stat => 
+        new Date(stat.date) >= new Date(startDate.value) &&
+        new Date(stat.date) <= new Date(endDate.value)
+      )
+    ))
+  );
+});
 
 async function getData() {
   const id = route.params.id_user;
@@ -127,7 +179,6 @@ async function getData() {
     times.value = formattedData.times;
     stats.value = formattedData.stats;
     console.log(id);
-    
   } catch (error) {
     console.error(error);
   }
@@ -151,7 +202,6 @@ function formatData(apiResponse: any) {
   const timesSet = new Set<string>();
   const stats: Region[] = [];
 
-  // Fonction pour déterminer l'activité basée sur le type
   function getActivite(type: number): string {
     switch (type) {
       case 1:
@@ -169,7 +219,7 @@ function formatData(apiResponse: any) {
     const regionStats: Region = {
       region: regionData.region,
       site_in_situ: regionData.localite,
-      activite: "", // Nous allons le déterminer plus tard
+      activite: "",
       equipes: [],
     };
 
@@ -194,7 +244,6 @@ function formatData(apiResponse: any) {
       timesSet.add(formattedHoraire);
 
       const activite = getActivite(type);
-      console.log(activite);
       activiteSet.add(activite);
 
       if (!equipeStatsMap.has(equipe)) {
@@ -224,7 +273,6 @@ function formatData(apiResponse: any) {
       }
     });
 
-    // Déterminer l'activité principale du site
     regionStats.activite = Array.from(activiteSet)[0] || "NON SPECIFIE";
 
     equipeStatsMap.forEach((stats, nom) => {
@@ -264,6 +312,7 @@ onMounted(() => {
   getData();
 });
 </script>
+
 <style scoped>
 .table-container {
   display: flex;
@@ -277,7 +326,7 @@ onMounted(() => {
   font-family: "Arial", sans-serif;
   text-align: center;
   font-size: 14px;
-  flex: 1; /* Permet au tableau de prendre tout l'espace disponible */
+  flex: 1;
 }
 
 .styled-table th,
@@ -294,7 +343,8 @@ onMounted(() => {
 
 .styled-table .header-region,
 .styled-table .header-site,
-.styled-table .header-equipe {
+.styled-table .header-equipe,
+.styled-table .header-activite {
   background-color: #8b4513;
   color: white;
   font-weight: bold;
@@ -319,7 +369,8 @@ onMounted(() => {
 
 .styled-table .region-cell,
 .styled-table .site-cell,
-.styled-table .team-cell {
+.styled-table .team-cell,
+.styled-table .activite-cell {
   font-weight: bold;
   background-color: #f5f5f5;
 }
@@ -329,22 +380,23 @@ onMounted(() => {
 }
 
 .export-button-container {
-  margin-top: 16px; /* Ajoutez une marge pour séparer le bouton du tableau */
-  text-align: center; /* Centrer le bouton horizontalement */
-}
-.styled-table .header-activite {
-  background-color: #8b4513;
-  color: white;
-  font-weight: bold;
+  margin-top: 16px;
+  text-align: center;
 }
 
 .styled-table .activite-cell {
-  font-weight: bold;
-  background-color: #f5f5f5;
-  white-space: pre-wrap; /* Pour permettre le retour à la ligne si nécessaire */
+  white-space: pre-line;
 }
-.styled-table .activite-cell {
-  /* ... autres styles ... */
-  white-space: pre-line; /* Pour respecter les sauts de ligne */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.filters > * {
+  flex: 1;
+  min-width: 200px;
 }
 </style>

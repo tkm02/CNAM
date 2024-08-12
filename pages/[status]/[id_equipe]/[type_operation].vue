@@ -19,6 +19,7 @@ const text2Sub = "- soit le nombre total d'enrôlements de l'équipe, soit le no
 const text2Sub1 = "- la tranche horaire pendant laquelle l'équipe a travaillé."
 
 const equipe: any = route.params.status;
+const toast = useToast()
 
 
 async function handleSubmit() {
@@ -36,6 +37,13 @@ async function handleSubmit() {
     }
   } catch (error) {
     console.log(error);
+    toast.add({
+      title: "Ooops, une erreur est survenue !",
+      color: "red",
+      ui: {
+        title: "text-red-500",
+      },
+    });
   } finally {
     loading.value = false;
   }
@@ -107,7 +115,7 @@ const previousStep = () => {
       </div>
     </div>
     <div class="w-full flex justify-center mt-10">
-      <div class="grid grid-cols-2 gap-4" v-show="activeStep === 0">
+      <div class="grid grid-cols-1 gap-4" v-show="activeStep === 0">
         <TableWithoutInput />
 
         <div></div>
@@ -123,4 +131,6 @@ const previousStep = () => {
       <UButton size="lg" :loading="loading" :label="activeStep === length ? 'Terminer' : 'Suivant'" @click="nextStep" />
     </div>
   </div>
+
+  <UNotifications />
 </template>

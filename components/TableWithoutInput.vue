@@ -73,6 +73,8 @@ async function getDataKit() {
     rows.value = Object.values(response["1"]);
     selected.value = rows.value;
     selectedImp.value = imps.value;
+
+    token.setObjectif(selected.value.length * 50)
   } catch (error) {
     console.log(error);
   } finally {
@@ -178,13 +180,14 @@ function confirmRemoval() {
       <p class="mb-3">
         Liste des kits utilisés
       </p>
-      <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[450px]' }">
+      <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[800px] h-[30]' }">
         <UTable
+        :empty-state="{ icon: 'i-heroicons-circle-stack-20-solid', label: 'Aucune donnée disponible.' }"
           :loading="loading"
           v-model="selected"
           :rows="rows"
           :columns="columns"
-          :ui="{ td: { padding: 'py-1 px-2' }, base: 'min-w-[400px]' }"
+          :ui="{ td: { padding: 'py-1 px-2' }, base: 'min-w-full' }"
         >
           <template #id_equipement-data="{ row }">
             <p class="hidden">{{ row.id_equipement }}</p>
@@ -194,7 +197,7 @@ function confirmRemoval() {
     </div>
   </div>
 
-  <div>
+  <div class="mt-5">
     <div class="flex items-center space-x-4">
       <p style="font-weight: bold">Nombre d'imprimantes</p>
       <UInput
@@ -209,13 +212,14 @@ function confirmRemoval() {
       <p class="mb-3">
         Liste des imprimantes utilisées
       </p>
-      <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[450px]' }">
+      <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[800px]' }">
         <UTable
+        :empty-state="{ icon: 'i-heroicons-circle-stack-20-solid', label: 'Aucune donnée disponible.' }"
           :loading="loading"
           v-model="selectedImp"
           :rows="imps"
           :columns="columns"
-          :ui="{ td: { padding: 'py-1 px-2' }, base: 'min-w-[400px]' }"
+          :ui="{ td: { padding: 'py-1 px-2' }, base: 'min-w-full' }"
         >
           <template #id_equipement-data="{ row }">
             <p class="hidden">{{ row.id_equipement }}</p>
