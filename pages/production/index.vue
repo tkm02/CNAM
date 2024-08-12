@@ -5,7 +5,6 @@ definePageMeta({
 
 // const token = useTokenStore();
 // const manage = useManageStore();
-// const dataStore = useDataStore();
 // let data: any;
 
 // async function loadData() {
@@ -51,6 +50,6 @@ definePageMeta({
 
 <template>
   <div class="w-full h-full flex flex-col items-center mt-10">
-    <Enregistrement type-operation="1" />
+    <Enregistrement type-operation="2" />
   </div>
 </template>

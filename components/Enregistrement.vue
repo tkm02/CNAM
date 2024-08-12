@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useManageStore } from "~/stores/manageStore";
 
+const props = defineProps(["typeOperation"]);
+
 const selectedDate = ref(new Date());
 const loading = ref(false);
 const manage = useManageStore();
@@ -13,33 +15,36 @@ const token = useTokenStore();
 const dataStore = useDataStore();
 
 const columns = [
+  { key: "libelle" },
+  { key: "nbr_agent", label: "Agents" },
+  { key: "nbr_imprimante", label: "Imprimantes" },
+  { key: "nbr_kit", label: "Kits" },
+  { key: "realise", label: "Enrôlements" },
+  { key: "objectif", label: "Objectifs" },
+  { key: "type_operation" },
   { key: "id_equipe" },
-  { key: "libelle", label: "Nom de l'équipe" },
-  { key: "nbr_agent", label: "Nombre d'agents" },
-  { key: "nbr_imprimante", label: "Nombre d'imprimantes" },
-  { key: "nbr_kit", label: "Nombre de kits" },
-  { key: "actions", label: "Rapports" }, 
+  { key: "actions", label: "Rapports" },
 ];
 
 let data: any = [];
 
-function getTodayDateYMD() {
-  const today = new Date();
-
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0"); // Les mois sont indexés à partir de 0
-  const day = String(today.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-const formatDate = (date: Date): string => {
-  return format(date, "yyyy-MM-dd HH:mm:ss");
+const formatDate = (date: Date, symbol: any, reverse = false): string => {
+  if (reverse) {
+    return format(date, `dd${symbol}MM${symbol}yyyy`);
+  }
+  return format(date, `yyyy${symbol}MM${symbol}dd`);
 };
 
-const dateFormat = (date: Date):string =>{
-  return format(date, "yyyy-MM-dd")
+function formatEquipeName(equipe: string): string {
+  return equipe
+    .replace(/([a-z])([A-Z])/g, "$1 $2") // Ajoute un espace entre une lettre minuscule suivie d'une majuscule
+    .toLowerCase() // Transforme tout en minuscules
+    .replace(/\b\w/g, (letter) => letter.toUpperCase()); // Met en majuscule la première lettre de chaque mot
 }
+
+const dateFormat = (date: Date): string => {
+  return format(date, "yyyy-MM-dd");
+};
 
 const loadTableData = async (date: string) => {
   dataStore.updateData({ date });
@@ -52,7 +57,7 @@ async function getInfo(date: string) {
 
     // Récupérer toutes les équipes disponibles
     const allTeams = await manage.getAgentsByEquipe(token.getSiteId);
-    
+
     // Préparer un tableau pour stocker les équipes mises à jour
     const updatedTeams = new Map<number, any>();
 
@@ -64,16 +69,29 @@ async function getInfo(date: string) {
         nbr_agent: 0,
         nbr_imprimante: 0,
         nbr_kit: 0,
+        type_operation: 0,
+        realise: 0,
+        objectif: 0,
       }));
     } else {
-      // Lorsque la réponse contient des données, mettez à jour les équipes existantes
-      const responseTeams = response.map((e: any) => ({
+      // Filtrer les données pour ne conserver que celles avec type_operation == 1
+      const filteredResponse = response.filter(
+        (e: any) => e.type_operation === Number(props.typeOperation)
+      );
+
+      // Mettre à jour les équipes existantes avec les données filtrées
+      const responseTeams = filteredResponse.map((e: any) => ({
         id_equipe: e.id_equipe,
         libelle: e.libelle,
         nbr_agent: e.nbr_agent,
         nbr_imprimante: e.nbr_imprimante,
         nbr_kit: e.nbr_kit,
+        type_operation: e.type_operation,
+        realise: e.realise,
+        objectif: e.objectif,
       }));
+
+      const updatedTeams = new Map();
 
       responseTeams.forEach((team: any) => {
         updatedTeams.set(team.id_equipe, team);
@@ -88,6 +106,9 @@ async function getInfo(date: string) {
             nbr_agent: 0,
             nbr_imprimante: 0,
             nbr_kit: 0,
+            type_operation: 0,
+            realise: 0,
+            objectif: 0,
           });
         }
       });
@@ -106,33 +127,33 @@ async function getInfo(date: string) {
   }
 }
 
-
-
 watch(
   () => selectedDate.value,
   (newDate) => {
-    const formattedDate = formatDate(newDate);
+    const formattedDate = formatDate(newDate, "-");
     getInfo(formattedDate);
     loadTableData(formattedDate);
   },
   { immediate: true } // Pour charger les données immédiatement lors du montage
 );
 
-function reidirection(id: any, id_equipe: any) {
-  return navigateTo(`/${id}/${id_equipe}`);
+function reidirection(nom_equipe: any, id_equipe: any, type_op: any) {
+  return navigateTo(`/${nom_equipe}/${id_equipe}/${type_op}`);
 }
 
 onMounted(() => {
   const todayDate = new Date();
 
-  const formattedDate = formatDate(todayDate);
+  const formattedDate = formatDate(todayDate, "-");
   getInfo(dateFormat(todayDate)).then(() => {
     loadTableData(formattedDate);
   });
+  token.setDateSelected(formatDate(todayDate, "/", true));
 });
 
 watch([selectedDate], () => {
-  getInfo(formatDate);
+  getInfo(dateFormat(selectedDate.value));
+  token.setDateSelected(formatDate(selectedDate.value, "/", true));
 });
 </script>
 
@@ -149,24 +170,58 @@ watch([selectedDate], () => {
       <DatePicker v-model="selectedDate" @close="close" />
     </template>
   </UPopover>
-  <UCard :ui="{ body: { base: '' }, base: '' }">
+  <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: '' }">
     <!-- <div v-for="site in sites" :key="site.siteName"> -->
-      <h2>{{ token.getLocalites }}</h2>
+    <!-- <h2>{{ token.getLocalites }}</h2> -->
     <UTable
       :loading="loading"
       :rows="rows"
       :columns="columns"
       class="utable"
-      :ui="{ td: { padding: 'py-1 px-1' }, base: 'min-w-[600px]' }"
+      :ui="{
+        td: { padding: 'py-1 px-1', base: 'text-center' },
+        base: 'min-w-[600px]',
+        th: { base: 'text-center' },
+      }"
     >
       <template #id_equipe-data="{ row }">
         <p class="hidden">{{ row.id_equipe }}</p>
       </template>
       <template #libelle-data="{ row }">
-        <p class="custom-lowercase">{{ row.libelle }}</p>
+        <p class="">{{ formatEquipeName(row.libelle) }}</p>
+      </template>
+      <template #type_operation-data="{ row }">
+        <p class="hidden">{{ row.type_operation }}</p>
       </template>
       <template #actions-data="{ row }">
-        <UButton
+        <div class="flex space-x-2">
+          <UButton
+            block
+            :label="
+              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+                ? 'Modifier'
+                : 'Ajouter'
+            "
+            @click="
+              reidirection(
+                row.libelle.replace(' ', '_'),
+                row.id_equipe,
+                props.typeOperation
+              )
+            "
+            :icon="
+              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+                ? 'i-heroicons-pencil'
+                : 'i-heroicons-plus'
+            "
+            :color="
+              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+                ? 'orange'
+                : 'primary'
+            "
+          />
+        </div>
+        <!-- <UButton
           v-if="
             row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
           "
@@ -174,16 +229,16 @@ watch([selectedDate], () => {
           variant="solid"
           @click="reidirection(row.id_equipe, token.getSiteId)"
         >
-          Modifier
-        </UButton>
-        <UButton
+          {{ row.label }}
+        </UButton> -->
+        <!-- <UButton
           v-else
           color="primary"
           variant="solid"
           @click="reidirection(row.id_equipe, token.getSiteId)"
         >
           Ajouter
-        </UButton>
+        </UButton> -->
       </template>
     </UTable>
     <!-- </div> -->

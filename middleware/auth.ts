@@ -1,8 +1,11 @@
 export default defineNuxtRouteMiddleware((to, from) => {
   const authStore = useTokenStore();
 
-  if (authStore.getStatus) {
-    console.log(authStore.getToken);
-    return navigateTo("/");
+  console.log("Middleware activated");
+  console.log("authStore.getStatus:", authStore.getStatus);
+  
+  if (!authStore.getStatus) {
+    console.log("User is authenticated, redirecting...");
+    return navigateTo('/login');
   }
 });

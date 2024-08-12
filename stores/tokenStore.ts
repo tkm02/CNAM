@@ -7,6 +7,7 @@ export const useTokenStore = defineStore("token", {
       data: [],
       siteId: null,
       localites: null,
+      dateSelected: null,
     };
   },
   persist: true,
@@ -17,6 +18,7 @@ export const useTokenStore = defineStore("token", {
     getSiteId: (state) => state.siteId,
     getLocalites: (state) => state.localites,
     getData: (state) => state.data,
+    getDateSelected: (state) => state.dateSelected,
   },
   actions: {
     setToken(token: any) {
@@ -36,6 +38,10 @@ export const useTokenStore = defineStore("token", {
       this.data = data;
     },
 
+    setDateSelected(d: any) {
+      this.dateSelected = d;
+    },
+
     setSiteId(id: any) {
       this.siteId = id;
     },
@@ -45,6 +51,7 @@ export const useTokenStore = defineStore("token", {
       this.loggedIn = false;
       this.id = null;
       this.siteId = null;
+      this.dateSelected = null;
     },
   },
 });

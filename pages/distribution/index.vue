@@ -3,9 +3,10 @@ definePageMeta({
   middleware: "auth",
 });
 
+const isActive = ref(false);
+
 // const token = useTokenStore();
 // const manage = useManageStore();
-// const dataStore = useDataStore();
 // let data: any;
 
 // async function loadData() {
@@ -50,7 +51,10 @@ definePageMeta({
 </script>
 
 <template>
-  <div class="w-full h-full flex flex-col items-center mt-10">
-    <Enregistrement type-operation="1" />
+  <div class="w-full h-full flex flex-col items-center mt-10" v-if="isActive">
+    <Enregistrement type-operation="2" />
+  </div>
+  <div class="w-full h-[70vh] flex justify-center items-center">
+    <p>Pas encore actif</p>
   </div>
 </template>

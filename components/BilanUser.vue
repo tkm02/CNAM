@@ -2,7 +2,7 @@
 import { ref, watch, onMounted } from "vue";
 
 definePageMeta({
-  middleware: "guest",
+  middleware: "auth",
 });
 
 const columns = [
@@ -12,38 +12,11 @@ const columns = [
   },
   {
     key: "nom_agent",
-    label: "Nom de l'agent",
+    label: "Agent",
   },
   {
     key: "actions",
-    label: "Nombre de personnes enrollées",
-  },
-];
-
-const rawData = [
-  {
-    id: 5,
-    libelle: "team1",
-    heure_debut: "2024-08-01 08:00:00",
-    heure_fin: "2024-08-09 17:00:00",
-  },
-  {
-    id: 6,
-    libelle: "team2",
-    heure_debut: "2024-08-01 07:00:00",
-    heure_fin: "2024-08-09 14:00:00",
-  },
-  {
-    id: 7,
-    libelle: "team3",
-    heure_debut: "2024-08-01 14:00:00",
-    heure_fin: "2024-08-09 21:00:00",
-  },
-  {
-    id: 8,
-    libelle: "team4",
-    heure_debut: "2024-08-01 21:00:00",
-    heure_fin: "2024-08-10 07:00:00",
+    label: "Enrôlements",
   },
 ];
 
@@ -60,57 +33,44 @@ const removedItem = ref<any>(null);
 
 const manage = useManageStore();
 const route = useRoute();
-const status = ref(false);
 const dataStore = useDataStore();
 const token = useTokenStore();
 const tranche = ref<any>([]);
-
-const selectedTimeRangeId = ref<number | null>(null);
+const previousSelection = ref([...selected.value]);
 
 // Fonction appelée lors du changement de sélection
 const handleSelectChange = (id: number) => {
   console.log(`ID sélectionné : ${id}`);
-  selectedTimeRangeId.value = id;
-};
-
-
-function formatTimeRanges(data: any[]): { id: number; label: string }[] {
-  return data.map((item) => {
-    const startTime = new Date(item.heure_debut).toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    const endTime = new Date(item.heure_fin).toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    return {
-      id: item.id,
-      label: `${startTime}-${endTime}`,
-    };
+  dataStore.updateData({
+    tranche_horaire_id: Number(id),
   });
-}
-
-const timeRanges = formatTimeRanges(rawData);
-const selectedIssue = ref("");
-
-function formatDateTime(dateTimeString:any) {
-  // Créez un objet Date à partir de la chaîne de date-heure
-  const date = new Date(dateTimeString);
-
-  // Obtenez les heures et les minutes
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-
-  // Formatez en HH:mm
-  return `${hours}:${minutes}`;
-}
-
-const selectedTimeRange = ref(timeRanges[0]);
-const handleUpdateStatus = () => {
-  status.value = true;
 };
+
+function handleObjectifChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const value = parseFloat(input.value);
+
+  if (!isNaN(value)) {
+    dataStore.updateData({
+      objectif: Number(value),
+    });
+  } else {
+    console.error("Invalid input: Not a number");
+  }
+}
+
+function formatTimeRange(startTime: any, endTime: any) {
+  // Assurez-vous que les heures sont en format HH:mm
+  const formatTime = (time: any) => {
+    const [hours, minutes] = time.split(":");
+    return `${hours}H`;
+  };
+
+  return `${formatTime(startTime)}-${formatTime(endTime)}`;
+}
+
+const selectedTimeRange = ref<any>(null);
+
 const state = reactive({
   inpusel: undefined,
   motif: undefined,
@@ -124,6 +84,7 @@ watch(
       (item: any) => !newValue.includes(item)
     );
     if (removedItems.length > 0) {
+      previousSelection.value = [...oldValue]; // Sauvegarder l'ancienne sélection
       removedItem.value = removedItems[0];
       showModal.value = true;
     }
@@ -131,15 +92,25 @@ watch(
   { deep: true }
 );
 
-function closeModal() {
+function closeModal(status = false) {
   showModal.value = false;
   modalReason.value = "";
+  if (status == true) {
+    selected.value = [...previousSelection.value];
+  }
+  // Restaurer l'ancienne sélection
 }
 
 function submitModal() {
   console.log("Reason submitted for item:", removedItem.value);
   console.log("Reason:", modalReason.value);
-  addAgentDetail(state.motif, 3)
+  if (selected.value.includes(removedItem.value)) {
+    selected.value = selected.value.filter(
+      (item: any) => item.id_agent !== removedItem.value.id_agent
+    );
+  }
+
+  addAgentDetail(state.motif, removedItem.value.id_agent, state.inpusel);
   closeModal();
 }
 
@@ -154,34 +125,33 @@ async function getData() {
   }
 }
 
-function handlePrinterChangeInput(array: number[]) {
-  mainInputValue.value = array.reduce(
-    (sum: number, current: number) => sum + Number(current),
+function resetTableInputs() {
+  if (mainInputValue.value > 0) {
+    printerInputValuesArray.value = printerInputValuesArray.value.map(() => 0);
+  }
+}
+
+function updateMainInputValue() {
+  mainInputValue.value = printerInputValuesArray.value.reduce(
+    (acc, curr) => acc + curr,
     0
   );
 }
 
-const loadTableData = async (
-  nbr_agent: any,
-  realise: any,
-  equipe_id_fk: any,
-  tranche_horaire: any,
-  objectif: any
-) => {
+const loadTableData = async (nbr_agent: any, realise: any, objectif: any) => {
   dataStore.updateData({
     nbr_agent: nbr_agent,
     realise: realise,
-    equipe_id_fk: equipe_id_fk,
     site_id_fk: token.getSiteId,
-    tranche_horaire_id_fk: tranche_horaire,
     objectif: objectif,
   });
 };
 
-const addAgentDetail = (commentaire: any, agent_id_fk: any) => {
+const addAgentDetail = (commentaire: any, agent_id_fk: any, id_pb: any) => {
   const newDetail = {
     commentaire: commentaire,
     agent_id_fk: agent_id_fk,
+    type_probleme_id_fk: Number(id_pb),
   };
   dataStore.addDetailAg(newDetail);
 };
@@ -189,13 +159,7 @@ const addAgentDetail = (commentaire: any, agent_id_fk: any) => {
 watch(
   () => mainInputValue.value,
   () => {
-    loadTableData(
-      rows.value.length,
-      mainInputValue.value,
-      route.params.status,
-      selectedTimeRangeId.value,
-      state.objectif
-    );
+    loadTableData(rows.value.length, mainInputValue.value, state.objectif);
   }
 );
 
@@ -204,7 +168,7 @@ async function getDataAgent() {
   const id = route.params.id_equipe;
 
   try {
-    const response = await manage.getAgentsByEquipe(id);
+    const response = await manage.getAgentsByEquipe(token.siteId);
     console.log(response);
 
     rows.value = Object.values(response[0].agents);
@@ -221,67 +185,78 @@ async function getDataAgent() {
 onMounted(() => {
   getData();
   getDataAgent().then(() => {
-    loadTableData(
-      rows.value.length,
-      mainInputValue.value,
-      route.params.status,
-      selectedTimeRangeId.value,
-      state.objectif
-    );
+    loadTableData(rows.value.length, mainInputValue.value, state.inpusel);
   });
 });
-
-// Création de la référence pour le modèle de sélection
-
-console.log(timeRanges);
 </script>
 
 <template>
   <div class="grid grid-cols-1">
     <div>
       <div class="flex items-center space-x-4 mb-4">
-        <p>Nombre d'enrôlements</p>
-        <UInput
-          v-model="mainInputValue"
-          class="w-[70px]"
-          type="number"
-          disabled
-        />
-        <p>Tranche horaire</p>
-        <USelect
-          v-model="selectedTimeRange"
-          :options="
+        <div class="flex items-center">
+          <p class="font-bold">Nombre total d'enrôlements</p>
+          <UInput
+            v-model="mainInputValue"
+            class="w-[70px]"
+            type="number"
+            @input="resetTableInputs"
+          />
+        </div>
+        <div class="flex items-center">
+          <p class="font-bold">Tranche horaire</p>
+          <USelect
+            v-model="selectedTimeRange"
+            :options="
             tranche.map((range:any) => ({
               label:
-                formatDateTime(range.heure_debut) +
-                '-' +
-                formatDateTime(range.heure_fin),
+                formatTimeRange(range.heure_debut, range.heure_fin),
               value: range.id,
             }))
           "
-          @change="handleSelectChange"
-        />
-        <p>Objectifs</p>
-        <UInput type="number" v-model="state.objectif" />
+            @change="handleSelectChange"
+          />
+        </div>
+        <div class="flex items-center space-x-3">
+          <p class="font-bold">Objectifs</p>
+          <UInput
+            type="number"
+            v-model="state.objectif"
+            @input="handleObjectifChange"
+          />
+        </div>
       </div>
 
       <div>
-        <p>Liste des agents de l'equipe A du 11/08/2024 de 07h-14h</p>
+        <p class="mb-3">
+          Liste des agents de l'equipe
+          <!-- {{
+            getTimeRangeLabelById(selectedTimeRange) !== null
+              ? "de " + getTimeRangeLabelById(selectedTimeRange)
+              : ""
+          }} -->
+        </p>
         <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' } }">
           <UTable
             v-model="selected"
             :rows="rows"
             :columns="columns"
             :loading="loading"
-            :ui="{ td: { padding: 'py-1 px-2' } }"
+            :ui="{
+              td: { padding: 'py-1 px-2' },
+              base: 'text-center',
+              th: { base: 'text-center' },
+            }"
           >
             <template #actions-data="{ row, index }">
-              <UInput
-                type="number"
-                v-model="printerInputValuesArray[index]"
-                class="w-[70px]"
-                @change="handlePrinterChangeInput(printerInputValuesArray)"
-              />
+              <div class="w-full flex justify-center items-center">
+                <UInput
+                  type="number"
+                  v-model="printerInputValuesArray[index]"
+                  class="w-[70px]"
+                  @change="updateMainInputValue"
+                />
+              </div>
             </template>
           </UTable>
         </UCard>
@@ -293,38 +268,37 @@ console.log(timeRanges);
       <UCard>
         <template #header>
           <h3 class="text-base font-semibold leading-6 text-gray-900">
-            Pourquoi voulez-vous retirer cet agents ?
+            Pour quelle raison cet agent n'était pas au travail ?
           </h3>
         </template>
         <div class="mt-2">
-          <p v-if="removedItem">
-            Motif de retrait de {{ removedItem.nom_agent }} ?
-          </p>
           <UForm :state="state">
             <UFormGroup>
               <USelect
+                placeholder="Motif de retrait"
                 color="primary"
                 variant="outline"
-                :options="['maladie', 'congés', 'autre']"
+                :options="[
+                  { name: 'maladie', value: 1 },
+                  { name: 'congés', value: 2 },
+                  { name: 'autre', value: 3 },
+                ]"
                 v-model="state.inpusel"
+                option-attribute="name"
               />
             </UFormGroup>
             <UFormGroup>
-              <UInput
+              <UTextarea
                 v-model="state.motif"
                 type="text"
-                placeholder="Entrez le motif ici"
-                class="mt-2 w-full p-2 border border-gray-300 rounded-md"
+                placeholder="Commentaire"
+                class="mt-2 w-full border border-gray-300 rounded-md"
               />
             </UFormGroup>
           </UForm>
           <div class="mt-4 flex justify-end space-x-2">
-            <UButton color="gray" label="Annuler" @click="closeModal" />
-            <UButton
-              color="red"
-              label="Confirmer"
-              @click="submitModal()"
-            />
+            <UButton color="gray" label="Annuler" @click="closeModal(true)" />
+            <UButton color="blue" label="Confirmer" @click="submitModal()" />
           </div>
         </div>
         <template #footer> </template>

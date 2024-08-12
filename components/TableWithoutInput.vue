@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import { z } from "zod";
 
-const props = defineProps({
-  updateStatus: Function,
+definePageMeta({
+  middleware: "auth",
 });
+
 const manage = useManageStore();
 const route = useRoute();
 const rows = ref<{}[]>([]);
 const imps = ref<any>([]);
 const dataStore = useDataStore();
-const status = ref(false);
 const columns = [
   {
     key: "id_equipement",
@@ -32,6 +33,7 @@ const showModal = ref(false);
 const mainInputValue = ref(0);
 const secondInputValue = ref(0);
 const loading = ref(false);
+const token = useTokenStore();
 
 const itemToRemove = ref<any>(null);
 const removalReason = ref("");
@@ -45,21 +47,25 @@ const state = reactive({
 //   dataStore.updateData({ nbr_equipement: data1 + data2 });
 // };
 
+const schema = z.object({
+  motif: z.string({ message: "Champs obligatoire" }).min(1, 'Champs requis'),
+});
+
 const loadTableData = async (nbr_kit: number, nbr_imp: number) => {
   console.log("Data to update:", { nbr_equipement: nbr_kit + nbr_imp }); // Log pour vérifier les données
   dataStore.updateData({
     nbr_equipement: nbr_kit + nbr_imp,
     nbr_Imp: nbr_imp,
     nbr_kit: nbr_kit,
+    equipe_id_fk: Number(route.params.id_equipe),
+    type_operation: Number(route.params.type_operation),
   });
 };
 
 async function getDataKit() {
   loading.value = true;
-  const id = route.params.id_equipe;
   try {
-    const response = await manage.getKit(id);
-    console.log(id);
+    const response = await manage.getKit(token.getSiteId);
 
     console.log(response);
 
@@ -92,10 +98,11 @@ watch(
   { deep: true }
 );
 
-const addEquipmentDetail = (motif: any, id: any) => {
-  const newDetail = {
-    commentaire: motif,
+const addEquipmentDetail = (id_pb: any, motif: any, id: any) => {
+  const newDetail: any = {
     equipement_id_fk: id,
+    commentaire: motif,
+    type_probleme_id_fk: Number(id_pb),
   };
   dataStore.addDetailEq(newDetail);
 };
@@ -145,16 +152,20 @@ function confirmRemoval() {
     );
   }
 
-  addEquipmentDetail(state.message, itemToRemove.value.id_equipement);
+  addEquipmentDetail(
+    state.motif,
+    state.message,
+    itemToRemove.value.id_equipement
+  );
 
-   closeModal();
+  closeModal();
 }
 </script>
 
 <template>
   <div>
     <div class="flex items-center space-x-4">
-      <p style="font-weight: bold;">Nombre de kits</p>
+      <p style="font-weight: bold">Nombre de kits</p>
       <UInput
         v-model="mainInputValue"
         class="w-[70px]"
@@ -164,7 +175,9 @@ function confirmRemoval() {
     </div>
 
     <div class="mt-4">
-      <p>Liste des kits utilisés à la date du 11/08/2024</p>
+      <p class="mb-3">
+        Liste des kits utilisés
+      </p>
       <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[450px]' }">
         <UTable
           :loading="loading"
@@ -183,7 +196,7 @@ function confirmRemoval() {
 
   <div>
     <div class="flex items-center space-x-4">
-      <p style="font-weight: bold;">Nombre d'imprimantes</p>
+      <p style="font-weight: bold">Nombre d'imprimantes</p>
       <UInput
         v-model="secondInputValue"
         class="w-[70px]"
@@ -193,7 +206,9 @@ function confirmRemoval() {
     </div>
 
     <div class="mt-4">
-      <p>Liste des imprimantes utilisées à la date du 11/08/2024</p>
+      <p class="mb-3">
+        Liste des imprimantes utilisées
+      </p>
       <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[450px]' }">
         <UTable
           :loading="loading"
@@ -218,32 +233,38 @@ function confirmRemoval() {
         </h3>
       </template>
       <div class="mt-2">
-        <p v-if="itemToRemove">Motif de retrait {{ itemToRemove.name }}</p>
-        <UForm :state="state">
-          <USelect
-            color="primary"
-            variant="outline"
-            :options="['panne', 'maintenance']"
-            v-model="state.motif"
-          />
-          <UTextarea
-            v-model="state.message"
-            type="text"
-            placeholder="commentaire..."
-            class="mt-2 w-full border border-gray-300 rounded-md"
-          />
+        <UForm :state="state" :schema="schema" @submit="confirmRemoval">
+          <UFormGroup name="motif">
+            <USelect
+              placeholder="Motif de retrait"
+              color="primary"
+              variant="outline"
+              :options="[
+                { name: 'panne', value: 1 },
+                { name: 'maintenance', value: 2 },
+              ]"
+              v-model="state.motif"
+              option-attribute="name"
+            />
+          </UFormGroup>
+          <UFormGroup name="message">
+            <UTextarea
+              v-model="state.message"
+              type="text"
+              placeholder="commentaire..."
+              class="mt-2 border border-gray-300 rounded-md"
+            />
+          </UFormGroup>
+          <p class="mt-3 text-xs italic text-gray-500">
+            <span class="text-red-500">*</span>
+            Selon le motif, donnez plus de précision (date, heure, point de circonstance, ...).
+          </p>
+          <div class="mt-4 flex justify-end space-x-2">
+            <UButton color="gray" label="Annuler" @click="closeModal" />
+            <UButton color="blue" label="Confirmer" type="submit" />
+          </div>
         </UForm>
       </div>
-      <template #footer>
-        <div class="mt-4 flex justify-end space-x-2">
-          <UButton color="gray" label="Annuler" @click="closeModal" />
-          <UButton
-            color="red"
-            label="Confirmer"
-            @click="confirmRemoval()"
-          />
-        </div>
-      </template>
     </UCard>
   </UModal>
 </template>
