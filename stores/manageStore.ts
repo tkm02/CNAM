@@ -4,7 +4,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://192.168.252.170:8000/api/",
+          "http://192.168.192.16:8000/api/",
           token
         );
 
@@ -23,7 +23,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://192.168.252.170:8000/api/",
+          "http://192.168.192.16:8000/api/",
           token
         );
 
@@ -38,7 +38,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://192.168.252.170:8000/api/",
+          "http://192.168.192.16:8000/api/",
           token
         );
 

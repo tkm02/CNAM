@@ -14,15 +14,12 @@ const text = "Décochez un kit ou une imprimante s'il n'a pas été utilisé !";
 
 const title2 = "Quel a été la performance de l'";
 const text2 =
-  "Veuillez saisir :\n soit le nombre d'enrôlement total de l'équipe, soit le nombre fait par agent. - la tranche horaire de travail pendant laquelle l'équipe a travaillé.";
-const title3 = "Veuillez vérifier les données de distribution";
-const text3 = "Veuillez confirmer les données relatives à la distribution.";
+  "Veuillez saisir : ";
+const text2Sub = "- soit le nombre total d'enrôlements de l'équipe, soit le nombre d'enrôlements faits par chaque agent.";
+const text2Sub1 = "- la tranche horaire pendant laquelle l'équipe a travaillé."
+
 const equipe: any = route.params.status;
 
-// Vérifiez si le paramètre type_operation est égal à 3
-if (route.params.type_operation == "3") {
-  length.value = 2; // Ajoutez une étape supplémentaire si type_operation est égal à 3
-}
 
 async function handleSubmit() {
   loading.value = true;
@@ -51,6 +48,25 @@ function formatEquipeName(equipe: string): string {
     .replace(/\b\w/g, (letter) => letter.toUpperCase()); // Met en majuscule la première lettre de chaque mot
 }
 
+function formatTextForDisplay(elementId: string, isHTML: boolean = true): void {
+  const text =
+    "Veuillez saisir :\n - soit le nombre total d'enrôlements de l'équipe, soit le nombre d'enrôlements faits par chaque agent. \n- la tranche horaire pendant laquelle l'équipe a travaillé.";
+
+  const formattedText = isHTML
+    ? text.replace(/\n/g, "<br>")
+    : text;
+
+  const element = document.getElementById(elementId);
+  if (element) {
+    if (isHTML) {
+      element.innerHTML = formattedText;
+    } else {
+      element.textContent = formattedText;
+    }
+  }
+}
+
+
 const nextStep = () => {
   if (activeStep.value < length.value) {
     activeStep.value++;
@@ -69,71 +85,13 @@ const previousStep = () => {
 </script>
 
 <template>
-  <div v-if="length > 1">
-    <div class="my-5 flex justify-center">
-      <div class="w-[650px]">
-        <h1 class="text-center font-bold text-2xl mb-3">
-          <!-- Adapter le titre en fonction de l'étape -->
-          {{
-            activeStep == 0 ? title1 : activeStep == 1 ? `${title3}` : title2
-          }}
-          <span v-if="activeStep !== 0" class="text-blue-500"
-            >{{ formatEquipeName(equipe.replace("_", " ")) }}
-            <span class="text-black">?</span></span
-          >
-          <span v-else class="text-blue-500">
-            {{ token.getDateSelected }}
-          </span>
-        </h1>
-        <!-- Adapter le texte en fonction de l'étape -->
-        <p class="text-xs font-thin italic text-gray-400 text-center">
-          <span class="text-red-500">*</span>
-          {{ activeStep == 0 ? text : activeStep == 1 ? text3 : text2 }}
-        </p>
-      </div>
-    </div>
-    <div class="w-full flex justify-center mt-10">
-      <div class="grid grid-cols-2 gap-4" v-show="activeStep === 0">
-        <TableWithoutInput />
-
-        <div></div>
-        <div class="flex justify-between h-[40px] w-full"></div>
-      </div>
-
-      <!-- Ajouter une nouvelle étape pour l'étape supplémentaire -->
-      <div
-        class="w-3/6 flex flex-col justify-center space-y-4"
-        v-show="activeStep === 1"
-      >
-        <FormulaireCamion />
-      </div>
-
-      <div
-        class="w-3/6 flex flex-col justify-center space-y-4"
-        v-show="activeStep === 2"
-      >
-        <BilanUser />
-      </div>
-    </div>
-    <div class="flex justify-center space-x-4 mt-5">
-      <UButton label="Retour" color="gray" @click="previousStep" />
-      <UButton
-        :loading="loading"
-        :label="activeStep === length ? 'Terminer' : 'Suivant'"
-        @click="nextStep"
-      />
-    </div>
-  </div>
-
-  <div v-else>
+  <div>
     <div class="my-5 flex justify-center">
       <div class="w-[650px]">
         <h1 class="text-center font-bold text-2xl mb-3">
           {{ activeStep == 0 ? title1 : title2 }}
-          <span v-if="activeStep !== 0" class="text-blue-500"
-            >{{ formatEquipeName(equipe.replace("_", " ")) }}
-            <span class="text-black">?</span></span
-          >
+          <span v-if="activeStep !== 0" class="text-blue-500">{{ formatEquipeName(equipe.replace("_", " ")) }}
+            <span class="text-black">?</span></span>
           <span v-else class="text-blue-500">
             {{ token.getDateSelected }}
           </span>
@@ -142,6 +100,10 @@ const previousStep = () => {
           <span class="text-red-500">*</span>
           {{ activeStep == 0 ? text : text2 }}
         </p>
+        <p class="text-xs font-thin italic text-gray-400 text-center" v-if="activeStep === 1">
+          {{ text2Sub }} <br />
+          {{ text2Sub1 }}
+        </p>
       </div>
     </div>
     <div class="w-full flex justify-center mt-10">
@@ -152,20 +114,13 @@ const previousStep = () => {
         <div class="flex justify-between h-[40px] w-full"></div>
       </div>
 
-      <div
-        class="w-3/6 flex flex-col justify-center space-y-4"
-        v-show="activeStep === 1"
-      >
+      <div class="w-3/6 flex flex-col justify-center space-y-4" v-show="activeStep === 1">
         <BilanUser />
       </div>
     </div>
-    <div class="flex justify-center space-x-4 mt-5">
-      <UButton label="Retour" color="gray" @click="previousStep" />
-      <UButton
-        :loading="loading"
-        :label="activeStep === length ? 'Terminer' : 'Suivant'"
-        @click="nextStep"
-      />
+    <div class="flex justify-center space-x-4 mt-5 mb-6">
+      <UButton label="Retour" color="gray" @click="previousStep" size="lg" />
+      <UButton size="lg" :loading="loading" :label="activeStep === length ? 'Terminer' : 'Suivant'" @click="nextStep" />
     </div>
   </div>
 </template>

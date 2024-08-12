@@ -123,10 +123,6 @@ const submitForm = () => {
         </div>
       </div>
 
-      <!-- Bouton de soumission -->
-      <div>
-        <UButton @click="submitForm" color="primary" block size="lg">Soumettre</UButton>
-      </div>
     </div>
     </div>
 

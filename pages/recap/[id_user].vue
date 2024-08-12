@@ -57,7 +57,7 @@
               >
                 {{ region.activite }}
               </td>
-              <td class="team-cell">{{ equipe.nom.toUpperCase() }}</td>
+              <td class="team-cell">{{ equipe.nom }}</td>
               <template v-for="date in dates" :key="`${equipe.nom}-${date}`">
                 <td>{{ getStatByDate(equipe.stats, date, "nb_op") }}</td>
                 <td>{{ getStatByDate(equipe.stats, date, "nb_kit") }}</td>

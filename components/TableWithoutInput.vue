@@ -69,8 +69,8 @@ async function getDataKit() {
 
     console.log(response);
 
-    imps.value = Object.values(response["1"]);
-    rows.value = Object.values(response["2"]);
+    imps.value = Object.values(response["2"]);
+    rows.value = Object.values(response["1"]);
     selected.value = rows.value;
     selectedImp.value = imps.value;
   } catch (error) {

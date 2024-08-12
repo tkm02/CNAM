@@ -2,54 +2,47 @@
 const token = useTokenStore();
 const data = useDataStore();
 
-const siteId = token.getSiteId;
-
 const links: any = [
   [
     {
-      labelClass:'logo'
+      labelClass: 'logo'
+    },
+    {
+      label: token.getRegion,
+      labelClass: 'region'
     },
     {
       label: token.getLocalites,
+      labelClass: 'localite'
     },
-    {
-      label: `Site ${siteId}`,
-    },
+    // {
+    //   label: `Site ${siteId}`,
+    // },
   ],
   [
-    // Filtrer les liens en fonction du siteId
-    ...(siteId !== 2
-      ? [
-          {
-            label: "Enrôlement",
-            to: "/",
-          },
-          {
-            label: "Production",
-            to: "/production",
-          },
-          {
-            label: "Distribution",
-            to: "/distribution",
-          },
-        ]
-      : []),
-    ...(siteId !== 1
-      ? [
-          {
-            label: "Mission camion",
-            to: "/mission_camion",
-          },
-        ]
-      : []),
+
+    {
+      label: "Enrôlement",
+      to: "/",
+    },
+    {
+      label: "Production",
+      to: "/production",
+    },
+    {
+      label: "Distribution",
+      to: "/distribution",
+    },
+
+    // {
+    //   label: "Recap",
+    //   to: "/recap",
+    // },
     {
       label: "Recap",
-      to: "/recap",
-    },
-    {
-      label: "Recap du site",
       to: `/recap/${token.getId}`,
     },
+
   ],
   [
     {
@@ -67,18 +60,14 @@ const links: any = [
 </script>
 
 <template>
-  <UHorizontalNavigation
-    :links="links"
-    class="border-b border-gray-200 dark:border-gray-800 mb-4"
-    :ui="{before:'hover:before:bg-transparent', active:'after:bg-transparent'}"
-  >
-  <template #default="{ link }">
-    <img
-      src="/img/logo-cnam.jpeg"
-      alt=""
-      v-if="link.labelClass === 'logo'"
-      class="2xs w-[100px] h-[50px] object-cover"
-    />
-  </template>
-</UHorizontalNavigation>
+  <UHorizontalNavigation :links="links" class="border-b border-gray-200 dark:border-gray-800 mb-4"
+    :ui="{ before: 'hover:before:bg-transparent', active: 'after:bg-transparent' }">
+    <template #default="{ link }">
+      <h1 v-if="link.labelClass === 'region'" class="text-[#009EDF]">{{ link.label }}</h1>
+      <h1 v-if="link.labelClass === 'localite'" class="text-[#47A126]">{{ link.label }}</h1>
+      <img src="/img/logo-cnam.jpeg" alt="" v-if="link.labelClass === 'logo'"
+        class="2xs w-[50px] h-[50px] object-cover" />
+      <UButton v-if="link.labelClass === 'deco'" color="red" :label="link.label" />
+    </template>
+  </UHorizontalNavigation>
 </template>
