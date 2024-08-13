@@ -99,10 +99,7 @@
           </template>
         </tbody>
       </v-simple-table>
-
-      <div class="export-button-container">
-        <UButton @click="exportToExcel" color="primary">Exporter en XLS</UButton>
-      </div>
+     
     </div>
   </v-container>
 </template>
@@ -149,24 +146,36 @@ const startDate = ref("");
 const endDate = ref("");
 
 // Computed properties pour les options des filtres
-const regions = computed(() => [...new Set(stats.value.map(s => s.region))]);
-const sites = computed(() => [...new Set(stats.value.map(s => s.site_in_situ))]);
-const activites = computed(() => [...new Set(stats.value.flatMap(s => s.activite.split('\n')))]);
-const equipes = computed(() => [...new Set(stats.value.flatMap(s => s.equipes.map(e => e.nom)))]);
+const regions = computed(() => [...new Set(stats.value.map((s) => s.region))]);
+const sites = computed(() => [
+  ...new Set(stats.value.map((s) => s.site_in_situ)),
+]);
+const activites = computed(() => [
+  ...new Set(stats.value.flatMap((s) => s.activite.split("\n"))),
+]);
+const equipes = computed(() => [
+  ...new Set(stats.value.flatMap((s) => s.equipes.map((e) => e.nom))),
+]);
 
 // Filtered stats
 const filteredStats = computed(() => {
-  return stats.value.filter(s => 
-    (!selectedRegion.value || s.region === selectedRegion.value) &&
-    (!selectedSite.value || s.site_in_situ === selectedSite.value) &&
-    (!selectedActivite.value || s.activite.includes(selectedActivite.value)) &&
-    (!selectedEquipe.value || s.equipes.some(e => e.nom === selectedEquipe.value)) &&
-    (!startDate.value || !endDate.value || s.equipes.some(e => 
-      e.stats.some(stat => 
-        new Date(stat.date) >= new Date(startDate.value) &&
-        new Date(stat.date) <= new Date(endDate.value)
-      )
-    ))
+  return stats.value.filter(
+    (s) =>
+      (!selectedRegion.value || s.region === selectedRegion.value) &&
+      (!selectedSite.value || s.site_in_situ === selectedSite.value) &&
+      (!selectedActivite.value ||
+        s.activite.includes(selectedActivite.value)) &&
+      (!selectedEquipe.value ||
+        s.equipes.some((e) => e.nom === selectedEquipe.value)) &&
+      (!startDate.value ||
+        !endDate.value ||
+        s.equipes.some((e) =>
+          e.stats.some(
+            (stat) =>
+              new Date(stat.date) >= new Date(startDate.value) &&
+              new Date(stat.date) <= new Date(endDate.value)
+          )
+        ))
   );
 });
 

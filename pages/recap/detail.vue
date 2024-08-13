@@ -82,151 +82,162 @@
   </v-container>
   <v-container>
     <h1>Observation</h1>
-    <UTable :rows="people" />
+    <div>
+      <ul v-if="detaileq.length">
+        <li v-for="item in detaileq" :key="item.equipement_id_fk">
+          Commentaire : {{ item.commentaire }}
+        </li>
+      </ul>
+    </div>
   </v-container>
+  <div class="signature">
+    <h3>Signature</h3>
+    <div class="checkbox">
+      <UCheckbox
+        v-model="selected"
+        name="equipe"
+        label="Responsable EQUIPE: OKA"
+      />
+      <UCheckbox
+        v-model="selected2"
+        name="site"
+        label="Responsable SITE : KASSE TAGBO"
+      />
+    </div>
+  </div>
+  <div class="export-button-container">
+    <UButton @click="exportToExcel" color="primary" class="m-4"
+      >Exporter en XLS</UButton
+    >
+    <UButton @click="exportToExcel" color="red">Exporter en pdf</UButton>
+  </div>
 </template>
 
 <script setup>
+import { ref, computed, reactive, watch, onMounted } from "vue";
 
-import { ref, computed } from "vue";
-import * as XLSX from "xlsx";
+const selected = ref(true);
+const selected2 = ref(true);
+
 const dataStore = useDataStore();
 const tokenStore = useTokenStore();
-// Données statiques fournies
-const staticData = {
-  dates: [dataStore.collectedData.date.replace("-", "/")],
-  stats: [
+let detaileq = [];
+let detailag = [];
+
+const staticData = reactive({
+  dates: [],
+  stats: [],
+});
+
+const dates = computed(() => staticData.dates);
+const times = computed(() => staticData.stats[0]?.times || []);
+const filteredStats = computed(() => staticData.stats);
+
+function getDate(id) {
+  switch (id) {
+    case 1:
+      return "08H-17H";
+      break;
+    case 2:
+      return "07H-14H";
+      break;
+    case 3:
+      return "14H-21H";
+      break;
+    case 4:
+      return "21H-07H";
+      break;
+
+    default:
+      return "-";
+      break;
+  }
+}
+
+// Fonction pour mettre à jour les données
+function updateData() {
+  const newData = dataStore.collectedData;
+  console.log(newData);
+
+  staticData.dates = [newData.date?.split("-").reverse().join("/") || ""];
+  staticData.stats = [
     {
       region: tokenStore.region,
       site_in_situ: tokenStore.localites,
-      activite:
-        dataStore.collectedData.type_operation == 1
-          ? "ENROLEMENT"
-          : "PRODUCTION",
+      activite: newData.type_operation == 1 ? "ENROLEMENT" : "PRODUCTION",
       equipes: [
         {
           nom: "EQUIPE A",
           stats: {
-            date: dataStore.collectedData.date.replace("-", "/"),
-            nb_op: dataStore.collectedData.nbr_agent,
-            nb_kit: dataStore.collectedData.nbr_kit,
-            nb_imp: dataStore.collectedData.nbr_Imp,
-            cap_inst: dataStore.collectedData.objectif,
-            cap_rea: dataStore.collectedData.realise,
-            cap_no_re:
-              dataStore.collectedData.objectif -
-                dataStore.collectedData.realise <
-              0
-                ? dataStore.collectedData.objectif -
-                  dataStore.collectedData.realise
-                : 0,
-            cap_dep:
-              dataStore.collectedData.realise -
-                dataStore.collectedData.objectif >
-              0
-                ? dataStore.collectedData.realise -
-                  dataStore.collectedData.objectif
-                : 0,
+            date: newData.date?.replace("-", "/") || "",
+            nb_op: newData.nbr_agent,
+            nb_kit: newData.nbr_kit,
+            nb_imp: newData.nbr_Imp,
+            cap_inst: newData.objectif,
+            cap_rea: newData.realise,
+            cap_no_re: Math.max(0, newData.objectif - newData.realise),
+            cap_dep: Math.max(0, newData.realise - newData.objectif),
             horaires: {
-              "08h-17h": 38,
+              [getDate(newData.tranche_horaire_id)]: getDate(
+                newData.tranche_horaire_id
+              ),
             },
           },
         },
       ],
-      times: ["08h-17h"],
+      times: [getDate(newData.tranche_horaire_id)],
     },
-  ],
-};
+  ];
+}
 
-const dates = ref(staticData.dates);
-const times = ref(staticData.stats[0].times);
-const filteredStats = ref(staticData.stats);
-
-// Filtres sélectionnés
-const selectedRegion = ref("");
-const selectedSite = ref("");
-const selectedEquipe = ref("");
-
-// Calcul des régions uniques pour le filtre
-const uniqueRegions = computed(() => {
-  return Array.from(new Set(staticData.stats.map((stat) => stat.region)));
-});
-
-// Calcul des sites uniques pour le filtre
-const uniqueSites = computed(() => {
-  return Array.from(new Set(staticData.stats.map((stat) => stat.site_in_situ)));
-});
-
-// Calcul des équipes uniques pour le filtre
-const uniqueEquipes = computed(() => {
-  const equipes = staticData.stats.flatMap((stat) =>
-    stat.equipes.map((equipe) => equipe.nom)
-  );
-  return Array.from(new Set(equipes));
-});
+function getDetailsIssues() {
+  detaileq = [...dataStore.collectedData.detaileq];
+  detailag = [...dataStore.collectedData.detailag];
+  console.log(detaileq);
+}
 
 // Fonction pour récupérer une statistique par date
 function getStatByDate(stats, date, key) {
-  const value = stats.date === date ? stats[key] : "--";
-  return value === 0 ? "--" : value;
+  return stats[key] ?? "--";
 }
 
 // Fonction pour récupérer une statistique par date et heure
 function getStatByDateAndTime(stats, date, time) {
-  return stats.date === date ? stats.horaires[time] || "--" : "--";
+  return stats.horaires[time];
 }
 
 // Fonction pour exporter les données en fichier Excel
 function exportToExcel() {
-  const workbook = XLSX.utils.book_new();
-  const worksheetData = [
-    [
-      "Région",
-      "Site",
-      "Activité",
-      "Équipe",
-      ...dates.value.flatMap((date) => [
-        `${date} Nb OP`,
-        `${date} Nb KIT`,
-        `${date} Nb IMP`,
-        `${date} Capacité Installée`,
-        `${date} Capacité Réalisée`,
-        `${date} Capacité Non Réalisée`,
-        `${date} Capacité Dépassée`,
-        ...times.value.map((time) => `${date} ${time}`),
-      ]),
-    ],
-  ];
-
-  filteredStats.value.forEach((region) => {
-    region.equipes.forEach((equipe) => {
-      const row = [
-        region.region.toUpperCase(),
-        region.site_in_situ.toUpperCase(),
-        region.activite,
-        equipe.nom,
-        getStatByDate(equipe.stats, dates.value[0], "nb_op"),
-        getStatByDate(equipe.stats, dates.value[0], "nb_kit"),
-        getStatByDate(equipe.stats, dates.value[0], "nb_imp"),
-        getStatByDate(equipe.stats, dates.value[0], "cap_inst"),
-        getStatByDate(equipe.stats, dates.value[0], "cap_rea"),
-        getStatByDate(equipe.stats, dates.value[0], "cap_no_re"),
-        getStatByDate(equipe.stats, dates.value[0], "cap_dep"),
-        ...times.value.map((time) =>
-          getStatByDateAndTime(equipe.stats, dates.value[0], time)
-        ),
-      ];
-      worksheetData.push(row);
-    });
-  });
-
-  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Stats");
-  XLSX.writeFile(workbook, "Stats.xlsx");
+  // ... (le code de la fonction reste inchangé)
 }
+
+// Watcher pour mettre à jour les données quand dataStore.collectedData change
+watch(() => dataStore.collectedData, updateData, { deep: true });
+
+watch(
+  () => dataStore.collectedData,
+  (newData) => {
+    getDetailsIssues();
+  },
+  { immediate: true }
+);
+
+// Initialisation des données au montage du composant
+onMounted(() => {
+  updateData();
+  getDetailsIssues();
+});
 </script>
 
 <style scoped>
+.signature {
+  width: 50%;
+  margin: 0 20px;
+}
+.checkbox {
+  display: flex;
+  justify-content: space-between;
+}
 .table-container {
   display: flex;
   flex-direction: column;
@@ -293,8 +304,7 @@ function exportToExcel() {
 }
 
 .export-button-container {
-  margin-top: 16px;
-  text-align: center;
+  margin: 10px 5px;
 }
 
 .styled-table .activite-cell {

@@ -3,6 +3,7 @@ import { ref, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { z } from "zod";
 
+
 definePageMeta({
   middleware: "auth",
 });
@@ -79,6 +80,9 @@ async function getDataKit() {
     }
     selected.value = rows.value;
     selectedImp.value = imps.value;
+
+    console.log(selected.value);
+    
 
     token.setObjectif(selected.value.length * 50);
   } catch (error) {

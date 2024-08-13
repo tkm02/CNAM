@@ -8,7 +8,7 @@ export const useDataStore = defineStore("dataStore", {
       nbr_Imp: 0,
       nbr_kit: 0,
       type_equipement_id: 1,
-      objectif: 0,
+      objectif: 0, 
       date: "",
       date_fin: "",
       realise: 0,

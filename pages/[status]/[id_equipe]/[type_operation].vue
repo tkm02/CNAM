@@ -29,8 +29,6 @@ async function handleSubmit() {
     const response = await dataStore.addData(dataStore.collectedData);
 
     if (response.message == 201) {
-      dataStore.deleteData();
-      dataStore.deleteDate();
       navigateTo("/recap/detail");
     } else {
       alert("Une erreur est survenue !");

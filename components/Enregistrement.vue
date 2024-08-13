@@ -14,7 +14,8 @@ const route = useRoute();
 const rows = ref<{}[]>([]);
 const token = useTokenStore();
 const dataStore = useDataStore();
-
+const textOperation =
+  route.params.type_operation == "1" ? "enrôlement" : "production";
 
 const columns = [
   { key: "libelle" },
@@ -73,7 +74,7 @@ async function getInfo(date: string) {
         nbr_kit: 0,
         type_operation: 0,
         realise: { value: 0, class: "bg-blue-500/50 text-white" },
-        objectif: 0,
+        objectif: 0, 
       }));
     } else {
       // Filtrer les données pour ne conserver que celles avec type_operation == 1
