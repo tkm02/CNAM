@@ -175,7 +175,8 @@ async function getDataAgent() {
 
     selected.value = rows.value;
     printerInputValuesArray.value = rows.value.map(() => 0);
-    state.objectif = token.objectif // Initialiser les valeurs de saisie à 0
+    dataStore.updateData({ objectif: token.getObjectif });
+    state.objectif = token.getObjectif // Initialiser les valeurs de saisie à 0
   } catch (error) {
     console.log(error);
   } finally {
@@ -187,6 +188,7 @@ onMounted(() => {
   getData();
   getDataAgent().then(() => {
     loadTableData(rows.value.length, mainInputValue.value, state.inpusel);
+    dataStore.updateData({ objectif: token.getObjectif });
   });
 });
 </script>
@@ -195,26 +197,38 @@ onMounted(() => {
   <div class="flex justify-between items-center">
     <div class="flex flex-col items-start">
       <p class="font-bold">Nombre total d'enrôlements</p>
-      <UInput v-model="mainInputValue" class="w-[70px]" type="number" @input="resetTableInputs" />
+      <UInput
+        v-model="mainInputValue"
+        class="w-[70px]"
+        type="number"
+        @input="resetTableInputs"
+      />
     </div>
     <div class="flex flex-col items-start">
       <p class="font-bold">Tranche horaire</p>
-      <USelect v-model="selectedTimeRange" :options="tranche.map((range: any) => ({
+      <USelect
+        v-model="selectedTimeRange"
+        :options="tranche.map((range: any) => ({
         label:
           formatTimeRange(range.heure_debut, range.heure_fin),
         value: range.id,
       }))
-        " @change="handleSelectChange" />
+        "
+        @change="handleSelectChange"
+      />
     </div>
     <div class="flex flex-col items-start">
       <p class="font-bold">Objectifs</p>
-      <UInput type="number" v-model="state.objectif" @input="handleObjectifChange" disabled />
+      <UInput
+        type="number"
+        v-model="state.objectif"
+        @input="handleObjectifChange"
+        disabled
+      />
     </div>
   </div>
   <div class="grid grid-cols-1">
     <div>
-
-
       <div>
         <p class="mb-3">
           Liste des agents de l'equipe
@@ -225,16 +239,29 @@ onMounted(() => {
           }} -->
         </p>
         <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' } }">
-          <UTable :empty-state="{ icon: 'i-heroicons-circle-stack-20-solid', label: 'Aucune donnée disponible.' }"
-            v-model="selected" :rows="rows" :columns="columns" :loading="loading" :ui="{
+          <UTable
+            :empty-state="{
+              icon: 'i-heroicons-circle-stack-20-solid',
+              label: 'Aucune donnée disponible.',
+            }"
+            v-model="selected"
+            :rows="rows"
+            :columns="columns"
+            :loading="loading"
+            :ui="{
               td: { padding: 'py-1 px-2' },
               base: 'text-center',
               th: { base: 'text-center' },
-            }">
+            }"
+          >
             <template #actions-data="{ row, index }">
               <div class="w-full flex justify-center items-center">
-                <UInput type="number" v-model="printerInputValuesArray[index]" class="w-[70px]"
-                  @change="updateMainInputValue" />
+                <UInput
+                  type="number"
+                  v-model="printerInputValuesArray[index]"
+                  class="w-[70px]"
+                  @change="updateMainInputValue"
+                />
               </div>
             </template>
           </UTable>
@@ -253,15 +280,26 @@ onMounted(() => {
         <div class="mt-2">
           <UForm :state="state">
             <UFormGroup>
-              <USelect placeholder="Motif de retrait" color="primary" variant="outline" :options="[
-                { name: 'maladie', value: 1 },
-                { name: 'congés', value: 2 },
-                { name: 'autre', value: 3 },
-              ]" v-model="state.inpusel" option-attribute="name" />
+              <USelect
+                placeholder="Motif de retrait"
+                color="primary"
+                variant="outline"
+                :options="[
+                  { name: 'maladie', value: 1 },
+                  { name: 'congés', value: 2 },
+                  { name: 'autre', value: 3 },
+                ]"
+                v-model="state.inpusel"
+                option-attribute="name"
+              />
             </UFormGroup>
             <UFormGroup>
-              <UTextarea v-model="state.motif" type="text" placeholder="Commentaire"
-                class="mt-2 w-full border border-gray-300 rounded-md" />
+              <UTextarea
+                v-model="state.motif"
+                type="text"
+                placeholder="Commentaire"
+                class="mt-2 w-full border border-gray-300 rounded-md"
+              />
             </UFormGroup>
           </UForm>
           <div class="mt-4 flex justify-end space-x-2">
