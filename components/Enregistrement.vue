@@ -10,17 +10,19 @@ const props = defineProps(["typeOperation"]);
 const selectedDate = ref(new Date());
 const loading = ref(false);
 const manage = useManageStore();
+const route = useRoute();
 const rows = ref<{}[]>([]);
 const token = useTokenStore();
 const dataStore = useDataStore();
+
 
 const columns = [
   { key: "libelle" },
   { key: "nbr_agent", label: "Agents" },
   { key: "nbr_imprimante", label: "Imprimantes" },
   { key: "nbr_kit", label: "Kits" },
-  { key: "objectif", label: "Objectifs" },
-  { key: "realise", label: "Enrôlements", class: 'bg-blue-500/50 text-white' },
+  { key: "objectif", label: "Capacité installée" },
+  { key: "realise", label: "Enrôlements", class: "bg-blue-500/50 text-white" },
   { key: "type_operation" },
   { key: "id_equipe" },
   { key: "actions", label: "Rapports" },
@@ -70,7 +72,7 @@ async function getInfo(date: string) {
         nbr_imprimante: 0,
         nbr_kit: 0,
         type_operation: 0,
-        realise: { value: 0, class: 'bg-blue-500/50 text-white' },
+        realise: { value: 0, class: "bg-blue-500/50 text-white" },
         objectif: 0,
       }));
     } else {
@@ -87,7 +89,7 @@ async function getInfo(date: string) {
         nbr_imprimante: e.nbr_imprimante,
         nbr_kit: e.nbr_kit,
         type_operation: e.type_operation,
-        realise: { value: e.realise,class: 'bg-blue-500/50 text-white' },
+        realise: { value: e.realise, class: "bg-blue-500/50 text-white" },
         objectif: e.objectif,
       }));
 
@@ -107,7 +109,7 @@ async function getInfo(date: string) {
             nbr_imprimante: 0,
             nbr_kit: 0,
             type_operation: 0,
-            realise: { value: 0, class: 'bg-blue-500/50 text-white' },
+            realise: { value: 0, class: "bg-blue-500/50 text-white" },
             objectif: 0,
           });
         }
@@ -161,7 +163,10 @@ watch([selectedDate], () => {
   <UPopover :popper="{ placement: 'bottom-start' }">
     <div class="mb-5 flex">
       <h1>Enregistrement du</h1>
-      <UButton icon="i-heroicons-calendar-days-20-solid" :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })" />
+      <UButton
+        icon="i-heroicons-calendar-days-20-solid"
+        :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })"
+      />
     </div>
     <template #panel="{ close }">
       <DatePicker v-model="selectedDate" @close="close" />
@@ -170,12 +175,21 @@ watch([selectedDate], () => {
   <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: '' }">
     <!-- <div v-for="site in sites" :key="site.siteName"> -->
     <!-- <h2>{{ token.getLocalites }}</h2> -->
-    <UTable :empty-state="{ icon: 'i-heroicons-circle-stack-20-solid', label: 'Aucune donnée disponible.' }"
-      :loading="loading" :rows="rows" :columns="columns" class="utable" :ui="{
+    <UTable
+      :empty-state="{
+        icon: 'i-heroicons-circle-stack-20-solid',
+        label: 'Aucune donnée disponible.',
+      }"
+      :loading="loading"
+      :rows="rows"
+      :columns="columns"
+      class="utable"
+      :ui="{
         td: { padding: 'py-1 px-1', base: 'text-center' },
         base: 'min-w-[600px]',
         th: { base: 'text-center' },
-      }">
+      }"
+    >
       <template #id_equipe-data="{ row }">
         <p class="hidden">{{ row.id_equipe }}</p>
       </template>
@@ -186,26 +200,35 @@ watch([selectedDate], () => {
         <p class="hidden">{{ row.type_operation }}</p>
       </template>
       <template #realise-data="{ row }">
-          {{ row.realise.value }}
+        {{ row.realise.value }}
       </template>
       <template #actions-data="{ row }">
         <div class="flex space-x-2">
-          <UButton block :label="row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
-            ? 'Modifier'
-            : 'Ajouter'
-            " @click="
+          <UButton
+            block
+            :label="
+              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+                ? 'Modifier'
+                : 'Ajouter'
+            "
+            @click="
               reidirection(
                 row.libelle.replace(' ', '_'),
                 row.id_equipe,
                 props.typeOperation
               )
-              " :icon="row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+            "
+            :icon="
+              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
                 ? 'i-heroicons-pencil'
                 : 'i-heroicons-plus'
-                " :color="row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+            "
+            :color="
+              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
                 ? 'orange'
                 : 'primary'
-                " />
+            "
+          />
         </div>
         <!-- <UButton
           v-if="

@@ -9,18 +9,19 @@ const route = useRoute();
 const dataStore = useDataStore();
 const token = useTokenStore();
 const loading = ref(false);
-const title1 = "Confirmez les kits et imprimantes utilisées le ";
+const title1 = "Confirmez les kits et imprimantes utilisées";
 const text = "Décochez un kit ou une imprimante s'il n'a pas été utilisé !";
 
 const title2 = "Quel a été la performance de l'";
-const text2 =
-  "Veuillez saisir : ";
-const text2Sub = "- soit le nombre total d'enrôlements de l'équipe, soit le nombre d'enrôlements faits par chaque agent.";
-const text2Sub1 = "- la tranche horaire pendant laquelle l'équipe a travaillé."
+const text2 = "Veuillez saisir : ";
+const text2Sub =
+  "- soit le nombre total d'enrôlements de l'équipe, soit le nombre d'enrôlements faits par chaque agent.";
+const text2Sub1 = "- la tranche horaire pendant laquelle l'équipe a travaillé.";
+const textOperation =
+  route.params.type_operation == "1" ? "d'enrôlement" : "de production";
 
 const equipe: any = route.params.status;
-const toast = useToast()
-
+const toast = useToast();
 
 async function handleSubmit() {
   loading.value = true;
@@ -30,7 +31,7 @@ async function handleSubmit() {
     if (response.message == 201) {
       dataStore.deleteData();
       dataStore.deleteDate();
-      navigateTo("/");
+      navigateTo("/recap/detail");
     } else {
       alert("Une erreur est survenue !");
       console.log(response);
@@ -60,9 +61,7 @@ function formatTextForDisplay(elementId: string, isHTML: boolean = true): void {
   const text =
     "Veuillez saisir :\n - soit le nombre total d'enrôlements de l'équipe, soit le nombre d'enrôlements faits par chaque agent. \n- la tranche horaire pendant laquelle l'équipe a travaillé.";
 
-  const formattedText = isHTML
-    ? text.replace(/\n/g, "<br>")
-    : text;
+  const formattedText = isHTML ? text.replace(/\n/g, "<br>") : text;
 
   const element = document.getElementById(elementId);
   if (element) {
@@ -73,7 +72,6 @@ function formatTextForDisplay(elementId: string, isHTML: boolean = true): void {
     }
   }
 }
-
 
 const nextStep = () => {
   if (activeStep.value < length.value) {
@@ -96,25 +94,47 @@ const previousStep = () => {
   <div>
     <div class="my-5 flex justify-center">
       <div class="w-[650px]">
-        <h1 class="text-center font-bold text-2xl mb-3">
-          {{ activeStep == 0 ? title1 : title2 }}
-          <span v-if="activeStep !== 0" class="text-blue-500">{{ formatEquipeName(equipe.replace("_", " ")) }}
-            <span class="text-black">?</span></span>
-          <span v-else class="text-blue-500">
+        <h1 class="text-center text-black font-bold text-2xl mb-5">
+          Enregistrement du rapport {{ textOperation }} du
+          <span class="text-blue-500">
             {{ token.getDateSelected }}
           </span>
         </h1>
-        <p class="text-xs font-thin italic text-gray-400 text-center">
-          <span class="text-red-500">*</span>
-          {{ activeStep == 0 ? text : text2 }}
-        </p>
-        <p class="text-xs font-thin italic text-gray-400 text-center" v-if="activeStep === 1">
-          {{ text2Sub }} <br />
-          {{ text2Sub1 }}
-        </p>
+        <h1 class="text-center font-semibold text-[#47A126] text-xl mb-3">
+          {{ activeStep == 0 ? title1 : title2 }}
+          <span v-if="activeStep !== 0" class="text-orange-500"
+            >{{ formatEquipeName(equipe.replace("_", " ")) }}
+            <span class="text-black">?</span></span
+          >
+        </h1>
       </div>
     </div>
     <div class="w-full flex justify-center mt-10">
+      <div
+        class="flex justify-start"
+        :class="activeStep == 0 ? 'w-[810px]' : 'w-[1250px]'"
+      >
+        <div>
+          <p
+            class="text-xs font-thin italic"
+            :class="activeStep === 0 ? 'text-red-500' : 'text-gray-500'"
+          >
+            *
+            {{ activeStep == 0 ? text : text2 }}
+          </p>
+          <div class="px-4 mt-0 pt-0">
+            <p
+              class="text-xs italic text-orange-500 font-bold"
+              v-if="activeStep === 1"
+            >
+              {{ text2Sub }} <br />
+              {{ text2Sub1 }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="w-full flex justify-center mt-2">
       <div class="grid grid-cols-1 gap-4" v-show="activeStep === 0">
         <TableWithoutInput />
 
@@ -122,13 +142,21 @@ const previousStep = () => {
         <div class="flex justify-between h-[40px] w-full"></div>
       </div>
 
-      <div class="w-3/6 flex flex-col justify-center space-y-4" v-show="activeStep === 1">
+      <div
+        class="w-3/6 flex flex-col justify-center space-y-4"
+        v-show="activeStep === 1"
+      >
         <BilanUser />
       </div>
     </div>
     <div class="flex justify-center space-x-4 mt-5 mb-6">
       <UButton label="Retour" color="gray" @click="previousStep" size="lg" />
-      <UButton size="lg" :loading="loading" :label="activeStep === length ? 'Terminer' : 'Suivant'" @click="nextStep" />
+      <UButton
+        size="lg"
+        :loading="loading"
+        :label="activeStep === length ? 'Terminer' : 'Suivant'"
+        @click="nextStep"
+      />
     </div>
   </div>
 

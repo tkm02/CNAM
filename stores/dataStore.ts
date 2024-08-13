@@ -20,6 +20,7 @@ export const useDataStore = defineStore("dataStore", {
     },
     dateSelected: null,
   }),
+  persist: true,
   getters: {
     getDateSelected: (state) => state.dateSelected,
   },
@@ -80,10 +81,7 @@ export const useDataStore = defineStore("dataStore", {
     async indexTrancheHoraire() {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
-          token
-        );
+        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
 
         const response = await apiWithoutAuth.get("v1/tranche");
         return response.data;
@@ -95,10 +93,7 @@ export const useDataStore = defineStore("dataStore", {
     async addData(data: any) {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
-          token
-        );
+        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
         const response = await apiWithoutAuth.post(
           "v1/operationJournaliere",
           data
@@ -112,10 +107,7 @@ export const useDataStore = defineStore("dataStore", {
     async getStat() {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
-          token
-        );
+        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
 
         const response = await apiWithoutAuth.get("v1/operationjournaliere");
 
@@ -128,10 +120,7 @@ export const useDataStore = defineStore("dataStore", {
     async getStatByUser(idUser: any) {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
-          token
-        );
+        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
 
         const response = await apiWithoutAuth.get(
           `v1/operationjournaliereByRespo/${idUser}`

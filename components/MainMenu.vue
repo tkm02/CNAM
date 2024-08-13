@@ -5,22 +5,28 @@ const data = useDataStore();
 const links: any = [
   [
     {
-      labelClass: 'logo'
+      labelClass: "logo",
     },
     {
       label: token.getRegion,
-      labelClass: 'region'
+      labelClass: "region",
+      disabled: true,
     },
     {
       label: token.getLocalites,
-      labelClass: 'localite'
+      labelClass: "localite",
+      disabled: true,
+    },
+    {
+      label: token.getNom,
+      disabled: true,
+      labelClass: "nom",
     },
     // {
     //   label: `Site ${siteId}`,
     // },
   ],
   [
-
     {
       label: "Enrôlement",
       to: "/",
@@ -33,18 +39,16 @@ const links: any = [
       label: "Distribution",
       to: "/distribution",
     },
-
-    // {
-    //   label: "Recap",
-    //   to: "/recap",
-    // },
     {
       label: "Recap",
       to: `/recap/${token.getId}`,
     },
 
-  ],
-  [
+    {
+      label: "Recap global",
+      to: "/recap",
+    },
+
     {
       labelClass: "deco",
       label: "Déconnexion",
@@ -60,14 +64,40 @@ const links: any = [
 </script>
 
 <template>
-  <UHorizontalNavigation :links="links" class="border-b border-gray-200 dark:border-gray-800 mb-4"
-    :ui="{ before: 'hover:before:bg-transparent', active: 'after:bg-transparent' }">
+  <!-- , active: 'after:bg-transparent'  -->
+  <UHorizontalNavigation
+    :links="links"
+    class="border-b border-gray-200 dark:border-gray-800 mb-4"
+    :ui="{
+      before: 'hover:before:bg-transparent',
+      active: 'text-orange-500 after:bg-transparent after:mt-4',
+    }"
+  >
     <template #default="{ link }">
-      <h1 v-if="link.labelClass === 'region'" class="text-[#009EDF] pr-4 py-3 border-r-2 border-gray-500">{{ link.label }}</h1>
-      <h1 v-if="link.labelClass === 'localite'" class="text-[#47A126]">{{ link.label }}</h1>
-      <img src="/img/logo-cnam.jpeg" alt="" v-if="link.labelClass === 'logo'"
-        class="2xs w-[50px] h-[50px] object-cover" />
-      <UButton v-if="link.labelClass === 'deco'" color="red" :label="link.label" />
+      <h1
+        v-if="link.labelClass === 'region'"
+        class="text-[#009EDF] pr-4 py-3 border-r-2 border-gray-500"
+      >
+        {{ link.label }}
+      </h1>
+      <h1
+        v-if="link.labelClass === 'localite'"
+        class="text-[#47A126] pr-4 py-3 border-r-2 border-gray-500"
+      >
+        {{ link.label }}
+      </h1>
+      <h1 v-if="link.labelClass === 'nom'" class="">{{ link.label }}</h1>
+      <img
+        src="/img/logo-cnam.jpeg"
+        alt=""
+        v-if="link.labelClass === 'logo'"
+        class="2xs w-[50px] h-[50px] object-cover"
+      />
+      <UButton
+        v-if="link.labelClass === 'deco'"
+        color="red"
+        :label="link.label"
+      />
     </template>
   </UHorizontalNavigation>
 </template>

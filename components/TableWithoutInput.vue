@@ -48,7 +48,7 @@ const state = reactive({
 // };
 
 const schema = z.object({
-  motif: z.string({ message: "Champs obligatoire" }).min(1, 'Champs requis'),
+  motif: z.string({ message: "Champs obligatoire" }).min(1, "Champs requis"),
 });
 
 const loadTableData = async (nbr_kit: number, nbr_imp: number) => {
@@ -69,12 +69,18 @@ async function getDataKit() {
 
     console.log(response);
 
-    imps.value = Object.values(response["2"]);
-    rows.value = Object.values(response["1"]);
+    if (response.length != 0) {
+      imps.value = Object.values(
+        route.params.type_operation == "1" ? response["5"] : response["6"]
+      );
+      rows.value = Object.values(
+        route.params.type_operation == "2" ? response["1"] : response["3"]
+      );
+    }
     selected.value = rows.value;
     selectedImp.value = imps.value;
 
-    token.setObjectif(selected.value.length * 50)
+    token.setObjectif(selected.value.length * 50);
   } catch (error) {
     console.log(error);
   } finally {
@@ -177,12 +183,18 @@ function confirmRemoval() {
     </div>
 
     <div class="mt-4">
-      <p class="mb-3">
-        Liste des kits utilisés
-      </p>
-      <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[800px] h-[30]' }">
+      <p class="mb-3">Liste des kits utilisés</p>
+      <UCard
+        :ui="{
+          body: { padding: 'px-0 py-0 sm:p-0' },
+          base: 'w-[800px] h-[30]',
+        }"
+      >
         <UTable
-        :empty-state="{ icon: 'i-heroicons-circle-stack-20-solid', label: 'Aucune donnée disponible.' }"
+          :empty-state="{
+            icon: 'i-heroicons-circle-stack-20-solid',
+            label: 'Aucune donnée disponible.',
+          }"
           :loading="loading"
           v-model="selected"
           :rows="rows"
@@ -209,12 +221,13 @@ function confirmRemoval() {
     </div>
 
     <div class="mt-4">
-      <p class="mb-3">
-        Liste des imprimantes utilisées
-      </p>
+      <p class="mb-3">Liste des imprimantes utilisées</p>
       <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[800px]' }">
         <UTable
-        :empty-state="{ icon: 'i-heroicons-circle-stack-20-solid', label: 'Aucune donnée disponible.' }"
+          :empty-state="{
+            icon: 'i-heroicons-circle-stack-20-solid',
+            label: 'Aucune donnée disponible.',
+          }"
           :loading="loading"
           v-model="selectedImp"
           :rows="imps"
@@ -244,8 +257,8 @@ function confirmRemoval() {
               color="primary"
               variant="outline"
               :options="[
-                { name: 'panne', value: 1 },
-                { name: 'maintenance', value: 2 },
+                { name: 'Panne', value: 1 },
+                { name: 'Maintenance', value: 2 },
               ]"
               v-model="state.motif"
               option-attribute="name"
@@ -261,7 +274,8 @@ function confirmRemoval() {
           </UFormGroup>
           <p class="mt-3 text-xs italic text-gray-500">
             <span class="text-red-500">*</span>
-            Selon le motif, donnez plus de précision (date, heure, point de circonstance, ...).
+            Selon le motif, donnez plus de précision (date, heure, point de
+            circonstance, ...).
           </p>
           <div class="mt-4 flex justify-end space-x-2">
             <UButton color="gray" label="Annuler" @click="closeModal" />

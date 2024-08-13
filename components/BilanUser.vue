@@ -176,7 +176,7 @@ async function getDataAgent() {
     selected.value = rows.value;
     printerInputValuesArray.value = rows.value.map(() => 0);
     dataStore.updateData({ objectif: token.getObjectif });
-    state.objectif = token.getObjectif // Initialiser les valeurs de saisie à 0
+    state.objectif = token.getObjectif; // Initialiser les valeurs de saisie à 0
   } catch (error) {
     console.log(error);
   } finally {
@@ -194,44 +194,48 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex justify-between items-center">
-    <div class="flex flex-col items-start">
-      <p class="font-bold">Nombre total d'enrôlements</p>
-      <UInput
-        v-model="mainInputValue"
-        class="w-[70px]"
-        type="number"
-        @input="resetTableInputs"
-      />
-    </div>
-    <div class="flex flex-col items-start">
-      <p class="font-bold">Tranche horaire</p>
-      <USelect
-        v-model="selectedTimeRange"
-        :options="tranche.map((range: any) => ({
+  <UCard :ui="{ ring: 'ring-blue-500' }">
+    <div class="grid grid-cols-3 gap-64">
+      <div>
+        <p class="font-bold">Nombre total d'enrôlements</p>
+        <UInput
+          v-model="mainInputValue"
+          type="number"
+          @input="resetTableInputs"
+        />
+      </div>
+      <div>
+        <p class="font-bold">Tranche horaire</p>
+        <USelect
+          v-model="selectedTimeRange"
+          :options="tranche.map((range: any) => ({
         label:
           formatTimeRange(range.heure_debut, range.heure_fin),
         value: range.id,
       }))
         "
-        @change="handleSelectChange"
-      />
+          @change="handleSelectChange"
+        />
+      </div>
+      <div>
+        <p class="font-bold">Capacité installée</p>
+        <UInput
+          type="number"
+          v-model="state.objectif"
+          @input="handleObjectifChange"
+          disabled
+          color="gray"
+          variant="outline"
+        />
+      </div>
     </div>
-    <div class="flex flex-col items-start">
-      <p class="font-bold">Objectifs</p>
-      <UInput
-        type="number"
-        v-model="state.objectif"
-        @input="handleObjectifChange"
-        disabled
-      />
-    </div>
-  </div>
+  </UCard>
+
   <div class="grid grid-cols-1">
     <div>
       <div>
         <p class="mb-3">
-          Liste des agents de l'equipe
+          Liste des agents de l'équipe
           <!-- {{
             getTimeRangeLabelById(selectedTimeRange) !== null
               ? "de " + getTimeRangeLabelById(selectedTimeRange)
@@ -285,9 +289,9 @@ onMounted(() => {
                 color="primary"
                 variant="outline"
                 :options="[
-                  { name: 'maladie', value: 1 },
-                  { name: 'congés', value: 2 },
-                  { name: 'autre', value: 3 },
+                  { name: 'Maladie', value: 1 },
+                  { name: 'Congés', value: 2 },
+                  { name: 'Autre', value: 3 },
                 ]"
                 v-model="state.inpusel"
                 option-attribute="name"
