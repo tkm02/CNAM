@@ -81,7 +81,7 @@ export const useDataStore = defineStore("dataStore", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://192.168.192.16:8000/api/",
+          "http://57.128.30.4/api/",
           token
         );
 
@@ -96,7 +96,7 @@ export const useDataStore = defineStore("dataStore", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://192.168.192.16:8000/api/",
+          "http://57.128.30.4/api/",
           token
         );
         const response = await apiWithoutAuth.post(
@@ -113,7 +113,7 @@ export const useDataStore = defineStore("dataStore", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://192.168.192.16:8000/api/",
+          "http://57.128.30.4/api/",
           token
         );
 
@@ -129,7 +129,7 @@ export const useDataStore = defineStore("dataStore", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://192.168.192.16:8000/api/",
+          "http://57.128.30.4/api/",
           token
         );
 
