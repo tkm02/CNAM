@@ -1,0 +1,51 @@
+[
+    {
+      "equipe": "A",
+      "agents": [
+        {"id": 6, "name": "Agent A1", "personnes_enrollees": 0},
+        {"id": 7, "name": "Agent A2", "personnes_enrollees": 0},
+        {"id": 8, "name": "Agent A3", "personnes_enrollees": 0},
+        {"id": 9, "name": "Agent A4", "personnes_enrollees": 0},
+        {"id": 10, "name": "Agent A5", "personnes_enrollees": 0},
+        {"id": 11, "name": "Agent A6", "personnes_enrollees": 0},
+        {"id": 12, "name": "Agent A7", "personnes_enrollees": 0}
+      ]
+    },
+    {
+      "equipe": "B",
+      "agents": [
+        {"id": 13, "name": "Agent B1", "personnes_enrollees": 0},
+        {"id": 14, "name": "Agent B2", "personnes_enrollees": 0},
+        {"id": 15, "name": "Agent B3", "personnes_enrollees": 0},
+        {"id": 16, "name": "Agent B4", "personnes_enrollees": 0},
+        {"id": 17, "name": "Agent B5", "personnes_enrollees": 0},
+        {"id": 18, "name": "Agent B6", "personnes_enrollees": 0},
+        {"id": 19, "name": "Agent B7", "personnes_enrollees": 0}
+      ]
+    },
+    {
+      "equipe": "C",
+      "agents": [
+        {"id": 20, "name": "Agent C1", "personnes_enrollees": 0},
+        {"id": 21, "name": "Agent C2", "personnes_enrollees": 0},
+        {"id": 22, "name": "Agent C3", "personnes_enrollees": 0},
+        {"id": 23, "name": "Agent C4", "personnes_enrollees": 0},
+        {"id": 24, "name": "Agent C5", "personnes_enrollees": 0},
+        {"id": 25, "name": "Agent C6", "personnes_enrollees": 0},
+        {"id": 26, "name": "Agent C7", "personnes_enrollees": 0}
+      ]
+    },
+    {
+      "equipe": "D",
+      "agents": [
+        {"id": 27, "name": "Agent D1", "personnes_enrollees": 0},
+        {"id": 28, "name": "Agent D2", "personnes_enrollees": 0},
+        {"id": 29, "name": "Agent D3", "personnes_enrollees": 0},
+        {"id": 30, "name": "Agent D4", "personnes_enrollees": 0},
+        {"id": 31, "name": "Agent D5", "personnes_enrollees": 0},
+        {"id": 32, "name": "Agent D6", "personnes_enrollees": 0},
+        {"id": 33, "name": "Agent D7", "personnes_enrollees": 0}
+      ]
+    }
+  ]
+  

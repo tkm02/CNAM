@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from "vue";
+import { ref, watch, onMounted, reactive } from "vue";
 import { useRoute } from "vue-router";
 import { z } from "zod";
-
 
 definePageMeta({
   middleware: "auth",
@@ -25,6 +24,14 @@ const columns = [
     key: "numero_serie",
     label: "Numero de serie",
   },
+  {
+    key: "motif",
+    label: "Motif",
+  },
+  {
+    key: "commentaire",
+    label: "Commentaire",
+  },
 ];
 
 const selected = ref<any>([]);
@@ -44,16 +51,20 @@ const state = reactive({
   motif: undefined,
 });
 
-// const loadTableData = async (data1: number, data2: number) => {
-//   dataStore.updateData({ nbr_equipement: data1 + data2 });
-// };
-
 const schema = z.object({
   motif: z.string({ message: "Champs obligatoire" }).min(1, "Champs requis"),
 });
 
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  const truncated = text.slice(0, maxLength - 3);
+  return `${truncated}...`;
+}
+
 const loadTableData = async (nbr_kit: number, nbr_imp: number) => {
-  console.log("Data to update:", { nbr_equipement: nbr_kit + nbr_imp }); // Log pour vérifier les données
+  console.log("Data to update:", { nbr_equipement: nbr_kit + nbr_imp });
   dataStore.updateData({
     nbr_equipement: nbr_kit + nbr_imp,
     nbr_Imp: nbr_imp,
@@ -66,7 +77,7 @@ const loadTableData = async (nbr_kit: number, nbr_imp: number) => {
 async function getDataKit() {
   loading.value = true;
   try {
-    const response = await manage.getKit(token.getSiteId);
+    const response = await manage.getKit(token.getDataInfo.valid_roles_and_sites[0].id_site);
 
     console.log(response);
 
@@ -82,7 +93,6 @@ async function getDataKit() {
     selectedImp.value = imps.value;
 
     console.log(selected.value);
-    
 
     token.setObjectif(selected.value.length * 50);
   } catch (error) {
@@ -92,50 +102,93 @@ async function getDataKit() {
   }
 }
 
-watch(
-  () => selected.value,
-  (newSelected, oldSelected) => {
-    const deselectedItems = oldSelected.filter(
-      (item: any) => !newSelected.includes(item)
-    );
+function deselectItemOnChange(itemId: number, type: 'kit' | 'imp') {
+  const items = type === 'kit' ? rows.value : imps.value;
+  const item = items.find((i: any) => i.id_equipement === itemId);
 
-    if (deselectedItems.length > 0) {
-      itemToRemove.value = deselectedItems[0];
-      showModal.value = true;
+  if (item) {
+    if (item.selectedMotif || (item.commentaire && item.commentaire.trim() !== "")) {
+      // Si une valeur est sélectionnée ou entrée, décocher l'élément
+      if (type === 'kit') {
+        selected.value = selected.value.filter((i: any) => i.id_equipement !== itemId);
+        mainInputValue.value = selected.value.length;
+      } else {
+        selectedImp.value = selectedImp.value.filter((i: any) => i.id_equipement !== itemId);
+        secondInputValue.value = selectedImp.value.length;
+      }
+      addEquipmentDetail(item.selectedMotif, item.id_equipement, item.commentaire);
+    } else {
+      // Si les deux champs sont vides, recocher l'élément s'il n'est pas déjà coché
+      if (type === 'kit' && !selected.value.some((i: any) => i.id_equipement === itemId)) {
+        selected.value.push(item);
+        mainInputValue.value = selected.value.length;
+      } else if (type === 'imp' && !selectedImp.value.some((i: any) => i.id_equipement === itemId)) {
+        selectedImp.value.push(item);
+        secondInputValue.value = selectedImp.value.length;
+      }
     }
-
-    mainInputValue.value = newSelected.length;
     loadTableData(mainInputValue.value, secondInputValue.value);
+  }
+}
+
+watch(
+  () => rows.value,
+  () => {
+    rows.value.forEach((row: any) => {
+      if (row.selectedMotif || (row.commentaire && row.commentaire.trim() !== "")) {
+        addEquipmentDetail(row.selectedMotif, row.id_equipement, row.commentaire);
+      }
+      deselectItemOnChange(row.id_equipement, 'kit');
+    });
   },
   { deep: true }
 );
 
-const addEquipmentDetail = (id_pb: any, motif: any, id: any) => {
+watch(
+  () => imps.value,
+  () => {
+    imps.value.forEach((imp: any) => {
+      if (imp.selectedMotif || (imp.commentaire && imp.commentaire.trim() !== "")) {
+        addEquipmentDetail(imp.selectedMotif, imp.id_equipement, imp.commentaire);
+      }
+      deselectItemOnChange(imp.id_equipement, 'imp');
+    });
+  },
+  { deep: true }
+);
+
+watch(
+  () => [...rows.value, ...imps.value],
+  (items) => {
+    items.forEach((item: any) => {
+      const isSelected = (item.id_equipement in rows.value ? selected : selectedImp).value.some(
+        (i: any) => i.id_equipement === item.id_equipement
+      );
+
+      if (isSelected) {
+        // Si l'item est sélectionné, on le retire de detaileq
+        dataStore.removeDetailEq(item.id_equipement);
+      } else if (item.selectedMotif || (item.commentaire && item.commentaire.trim() !== "")) {
+        // Si l'item n'est pas sélectionné mais a un motif ou un commentaire, on l'ajoute à detaileq
+        addEquipmentDetail(item.selectedMotif, item.id_equipement, item.commentaire);
+      }
+
+      deselectItemOnChange(item.id_equipement, item.id_equipement in rows.value ? 'kit' : 'imp');
+    });
+  },
+  { deep: true }
+);
+
+const addEquipmentDetail = (motif: any, id: any, commentaire: string) => {
   const newDetail: any = {
     equipement_id_fk: id,
-    commentaire: motif,
-    type_probleme_id_fk: Number(id_pb),
+    commentaire: commentaire,
+    type_probleme_id_fk: Number(motif),
   };
   dataStore.addDetailEq(newDetail);
 };
 
-watch(
-  () => selectedImp.value,
-  (newSelected, oldSelected) => {
-    const deselectedItems = oldSelected.filter(
-      (item: any) => !newSelected.includes(item)
-    );
 
-    if (deselectedItems.length > 0) {
-      itemToRemove.value = deselectedItems[0];
-      showModal.value = true;
-    }
-
-    secondInputValue.value = newSelected.length;
-    loadTableData(mainInputValue.value, secondInputValue.value);
-  },
-  { deep: true }
-);
 
 onMounted(() => {
   getDataKit().then(() => {
@@ -153,24 +206,13 @@ function closeModal() {
 
 function confirmRemoval() {
   console.log("Motif de suppression :", removalReason.value);
-
-  if (selected.value.includes(itemToRemove.value)) {
-    selected.value = selected.value.filter(
-      (item: any) => item.id !== itemToRemove.value.id
-    );
-  } else if (selectedImp.value.includes(itemToRemove.value)) {
-    selectedImp.value = selectedImp.value.filter(
-      (item: any) => item.id !== itemToRemove.value.id
-    );
-  }
-
-  addEquipmentDetail(
-    state.motif,
-    state.message,
-    itemToRemove.value.id_equipement
-  );
-
+  dataStore.updateData({ global_comment: state.message });
+  dataStore.updateData({ commentaire_globale_chief: state.message });
   closeModal();
+}
+
+function showGlobalCommentModal() {
+  showModal.value = true;
 }
 </script>
 
@@ -208,6 +250,24 @@ function confirmRemoval() {
           <template #id_equipement-data="{ row }">
             <p class="hidden">{{ row.id_equipement }}</p>
           </template>
+          <template #numero_serie-data="{ row }">
+            {{ truncateText(row.numero_serie, 10) }}
+          </template>
+          <template #motif-data="{ row }">
+            <USelect
+              placeholder="Motif de retrait"
+              variant="outline"
+              :options="[
+                { name: 'Panne', value: 1 },
+                { name: 'Maintenance', value: 2 },
+              ]"
+              v-model="row.selectedMotif"
+              option-attribute="name"
+            />
+          </template>
+          <template #commentaire-data="{ row }">
+            <UTextarea v-model="row.commentaire" />
+          </template>
         </UTable>
       </UCard>
     </div>
@@ -241,33 +301,46 @@ function confirmRemoval() {
           <template #id_equipement-data="{ row }">
             <p class="hidden">{{ row.id_equipement }}</p>
           </template>
+          <template #numero_serie-data="{ row }">
+            {{ truncateText(row.numero_serie, 10) }}
+          </template>
+          <template #motif-data="{ row }">
+            <USelect
+              placeholder="Motif de retrait"
+              variant="outline"
+              :options="[
+                { name: 'Panne', value: 1 },
+                { name: 'Maintenance', value: 2 },
+              ]"
+              v-model="row.selectedMotif"
+              option-attribute="name"
+            />
+          </template>
+          <template #commentaire-data="{ row }">
+            <UTextarea v-model="row.commentaire" />
+          </template>
         </UTable>
       </UCard>
     </div>
+  </div>
+
+  <div class="text-center mt-8">
+    <UButton
+      label="Commentaire globale"
+      color="red"
+      @click="showGlobalCommentModal"
+    />
   </div>
 
   <UModal v-model="showModal">
     <UCard>
       <template #header>
         <h3 class="text-base font-semibold leading-6 text-gray-900">
-          Pour quel motif cet équipement n'a pas été utilisé ?
+          Avez vous d'autres observations ?
         </h3>
       </template>
       <div class="mt-2">
-        <UForm :state="state" :schema="schema" @submit="confirmRemoval">
-          <UFormGroup name="motif">
-            <USelect
-              placeholder="Motif de retrait"
-              color="primary"
-              variant="outline"
-              :options="[
-                { name: 'Panne', value: 1 },
-                { name: 'Maintenance', value: 2 },
-              ]"
-              v-model="state.motif"
-              option-attribute="name"
-            />
-          </UFormGroup>
+        <UForm :state="state" @submit="confirmRemoval">
           <UFormGroup name="message">
             <UTextarea
               v-model="state.message"
@@ -276,11 +349,6 @@ function confirmRemoval() {
               class="mt-2 border border-gray-300 rounded-md"
             />
           </UFormGroup>
-          <p class="mt-3 text-xs italic text-gray-500">
-            <span class="text-red-500">*</span>
-            Selon le motif, donnez plus de précision (date, heure, point de
-            circonstance, ...).
-          </p>
           <div class="mt-4 flex justify-end space-x-2">
             <UButton color="gray" label="Annuler" @click="closeModal" />
             <UButton color="blue" label="Confirmer" type="submit" />

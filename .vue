@@ -1,349 +1,246 @@
-<!-- <template>
-    <v-container>
-      <div class="table-container">
-        <v-simple-table class="styled-table">
-          <thead>
-            <tr>
-              <th class="header-region">REGION</th>
-              <th class="header-site">SITE</th>
-              <th class="header-activite">ACTIVITES</th>
-              <th class="header-equipe">EQUIPES</th>
-              <th
-                v-for="date in dates"
-                :key="date"
-                class="header-date"
-                :colspan="9"
-              >
-                {{ date }}
-              </th>
-            </tr>
-            <tr>
-              <th colspan="4"></th>
-              <template v-for="date in dates" :key="date">
-                <th class="header-nb-op">Nb OP</th>
-                <th class="header-nb-kit">Nb KIT</th>
-                <th class="header-nb-imp">Nb IMP</th>
-                <th class="header-obj">Capacité Instalée</th>
-                <th class="header-obj">Capacité Realisée</th>
-                <th class="header-obj">Capacité Non Realisée</th>
-                <th class="header-obj">Capacité Dépassée</th>
-                <th class="header-obj">Tranche Horaire</th>
-              </template>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="region in filteredStats" :key="region.region">
-              <tr
-                v-for="(equipe, index) in region.equipes"
-                :key="`${region.region}-${equipe.nom}-${index}`"
-              >
-                <td
-                  v-if="index === 0"
-                  :rowspan="region.equipes.length"
-                  class="region-cell"
-                >
-                  {{ region.region.toUpperCase() }}
-                </td>
-                <td
-                  v-if="index === 0"
-                  :rowspan="region.equipes.length"
-                  class="site-cell"
-                >
-                  {{ region.site_in_situ.toUpperCase() }}
-                </td>
-                <td
-                  v-if="index === 0"
-                  :rowspan="region.equipes.length"
-                  class="activite-cell"
-                >
-                  {{ region.activite }}
-                </td>
-                <td class="team-cell">{{ equipe.nom }}</td>
-                <template v-for="date in dates" :key="`${equipe.nom}-${date}`">
-                  <td>{{ getStatByDate(equipe.stats, date, "nb_op") }}</td>
-                  <td>{{ getStatByDate(equipe.stats, date, "nb_kit") }}</td>
-                  <td>{{ getStatByDate(equipe.stats, date, "nb_imp") }}</td>
-                  <td>{{ getStatByDate(equipe.stats, date, "cap_inst") }}</td>
-                  <td>{{ getStatByDate(equipe.stats, date, "cap_rea") }}</td>
-                  <td>{{ getStatByDate(equipe.stats, date, "cap_no_re") }}</td>
-                  <td>{{ getStatByDate(equipe.stats, date, "cap_dep") }}</td>
-                  <td
-                    v-for="time in times"
-                    :key="`${equipe.nom}-${date}-${time}`"
-                  >
-                    {{ getStatByDateAndTime(equipe.stats, date, time) }}
-                  </td>
-                </template>
-              </tr>
-            </template>
-          </tbody>
-        </v-simple-table>
+
+<script setup lang="ts">
+import { ref, watch, onMounted, reactive } from "vue";
+
+definePageMeta({
+  middleware: "auth",
+});
+
+const columns = [
+  { key: "id_agent", label: "ID" },
+  { key: "nom_agent", label: "Agent" },
+  { key: "actions", label: "Enrôlements" },
+];
+
+const selected = ref<any>([]);
+const rows = ref<any>([]);
+const loading = ref(false);
+const mainInputValue = ref(0);
+const printerInputValuesArray = ref<number[]>([]);
+const showModal = ref(false);
+const modalReason = ref("");
+const removedItem = ref<any>(null);
+const tranche = ref<any>([]);
+const state = reactive({ inpusel: undefined, motif: undefined, objectif: 0 });
+
+const manage = useManageStore();
+const route = useRoute();
+const dataStore = useDataStore();
+const token = useTokenStore();
+const selectedTimeRange = ref<any>(null);
+
+watch(selected, (newValue, oldValue) => {
+  const removedItems = oldValue.filter((item: any) => !newValue.includes(item));
+  if (removedItems.length > 0) {
+    removedItem.value = removedItems[0];
+    showModal.value = true;
+  }
+}, { deep: true });
+
+watch(printerInputValuesArray, () => {
+  updateDetailOp();
+  updateMainInputValue();  // Met à jour la valeur totale des enrôlements
+}, { deep: true });
+
+watch(() => mainInputValue.value, () => {
+  loadTableData(rows.value.length, mainInputValue.value, state.objectif);
+});
+
+function addOperationDetail(agentName: string, nbrEnrolled: number) {
+  dataStore.addOperationDetail({ agentName, nbrEnrolled });
+}
+
+function updateDetailOp() {
+  dataStore.updateData({
+    detailop: selected.value.map((agent: any, index: number) => ({
+      agentName: agent.nom_agent,
+      nbrEnrolled: printerInputValuesArray.value[index] || 0,
+    })),
+  });
+}
+
+// Fonction pour mettre à jour la valeur totale des enrôlements
+function updateMainInputValue() {
+  mainInputValue.value = printerInputValuesArray.value.reduce((sum, value) => sum + value, 0);
+}
+
+function handleSelectChange(id: number) {
+  dataStore.updateData({ tranche_horaire_id: Number(id) });
+}
+
+function handleObjectifChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const value = parseFloat(input.value);
+
+  if (!isNaN(value)) {
+    dataStore.updateData({ objectif: Number(value) });
+  }
+}
+
+async function getData() {
+  try {
+    const response = await dataStore.indexTrancheHoraire();
+    tranche.value = Object.values(response.data);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+function resetTableInputs() {
+  if (mainInputValue.value > 0) {
+    printerInputValuesArray.value = printerInputValuesArray.value.map(() => 0);
+    updateMainInputValue();  // Mettre à jour mainInputValue après la réinitialisation
+  }
+}
+
+async function getDataAgent() {
+  loading.value = true;
+  try {
+    const response = await manage.getAgentsByEquipe(token.getDataInfo.valid_roles_and_sites[0].id_site);
+    rows.value = Object.values(response);
+    selected.value = rows.value;
+    printerInputValuesArray.value = rows.value.map(() => 0);
+    dataStore.updateData({ objectif: token.getObjectif });
+    state.objectif = token.getObjectif;
+  } catch (error) {
+    console.log(error);
+  } finally {
+    loading.value = false;
+  }
+}
+
+function closeModal(status = false) {
+  showModal.value = false;
+  modalReason.value = "";
+  if (status == true) {
+    selected.value.push(removedItem.value);
+  }
+}
+
+function submitModal() {
+  selected.value = selected.value.filter((item: any) => item.id_agent !== removedItem.value.id_agent);
+  addAgentDetail(state.motif, removedItem.value.id_agent, state.inpusel);
+  closeModal();
+}
+
+onMounted(() => {
+  getData();
+  getDataAgent().then(() => {
+    loadTableData(rows.value.length, mainInputValue.value, state.inpusel);
+  });
+});
+</script>
+
+
+<template>
+  <div>
+    <p class="text-xs font-thin italic text-gray-500">
+      *
+      {{ text2 }}
+    </p>
+    <div class="px-4 mt-0 pt-0">
+      <p class="text-xs italic text-orange-500 font-bold">
+        {{ text2Sub }} <br />
+        {{ text2Sub1 }}
+      </p>
+    </div>
+  </div>
+
+  <UCard :ui="{ ring: 'ring-blue-500' }">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 2xl:gap-64">
+      <div>
+        <p class="font-bold text-sm">Nombre total d'enrôlements</p>
+        <UInput
+          v-model="mainInputValue"
+          type="number"
+          @input="resetTableInputs"
+        />
       </div>
-    </v-container>
-    <v-container>
-          <h1>Observation</h1>
-          <UTable :rows="people" />
-        </v-container>
-        <div class="signature">
-          <h3>Signature</h3>
-          <div class="checkbox">
-            <UCheckbox
-              v-model="selected"
-              name="equipe"
-              label="Responsable EQUIPE: OKA"
-            />
-            <UCheckbox
-              v-model="selected2"
-              name="site"
-              label="Responsable SITE : KASSE TAGBO"
-            />
-          </div>
-        </div>
-        <div class="export-button-container">
-          <UButton @click="exportToExcel" color="primary" class="m-4"
-            >Exporter en XLS</UButton
+      <div>
+        <p class="font-bold text-sm">Tranche horaire</p>
+        <USelect
+          v-model="selectedTimeRange"
+          :options="tranche.map((range: any) => ({
+            label: formatTimeRange(range.heure_debut, range.heure_fin),
+            value: range.id,
+          }))"
+          @change="handleSelectChange"
+        />
+      </div>
+      <div>
+        <p class="font-bold text-sm">Capacité installée</p>
+        <UInput
+          type="number"
+          v-model="state.objectif"
+          @input="handleObjectifChange"
+          disabled
+          color="gray"
+          variant="outline"
+        />
+      </div>
+    </div>
+  </UCard>
+
+  <div class="grid grid-cols-1">
+    <div>
+      <div>
+        <p class="mb-3">
+          Liste des agents de l'équipe
+        </p>
+        <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' } }">
+          <UTable
+            :empty-state="{
+              icon: 'i-heroicons-circle-stack-20-solid',
+              label: 'Aucune donnée disponible.',
+            }"
+            v-model="selected"
+            :rows="rows"
+            :columns="columns"
+            :loading="loading"
+            :ui="{
+              td: { padding: 'py-1 px-2' },
+              base: 'text-start',
+              th: { base: 'text-center' },
+            }"
           >
-          <UButton @click="exportToExcel" color="red">Exporter en pdf</UButton>
-        </div>
-  </template>
+            <template #actions-data="{ row, index }">
+              <div class="w-full flex justify-center items-center">
+                <UInput
+                  type="number"
+                  v-model="printerInputValuesArray[index]"
+                  class="w-[70px]"
+                  @change="updateMainInputValue"
+                />
+              </div>
+            </template>
+          </UTable>
+        </UCard>
+      </div>
+    </div>
+
+    <!-- Modal pour la confirmation de suppression -->
+    <UModal v-model="showModal">
+      <UCard>
+        <template #header>
+          <h3 class="text-base font-semibold leading-6 text-gray-900">
+            Pour quelle raison supprimez-vous cet agent?
+          </h3>
+        </template>
+        <template #body>
+          <UInput
+            v-model="modalReason.value"
+            placeholder="Entrez la raison ici..."
+          />
+        </template>
+        <template #footer>
+          <div class="flex gap-2">
+            <UButton @click="closeModal(true)" ui="text" color="error">Annuler</UButton>
+            <UButton @click="submitModal()" ui="text" color="primary">Confirmer</UButton>
+          </div>
+        </template>
+      </UCard>
+    </UModal>
+  </div>
+
   
-  <script setup>
-  import { ref, computed } from "vue";
-  import * as XLSX from "xlsx";
-  const selected = ref(true)
-  const selected2 = ref(true)
-  
-  const dataStore = useDataStore();
-  const tokenStore = useTokenStore();
-  // Données statiques fournies
-  const staticData = reactive({
-    dates: [dataStore.collectedData.date.replace("-", "/")],
-    stats: [
-      {
-        region: tokenStore.region,
-        site_in_situ: tokenStore.localites,
-        activite:
-          dataStore.collectedData.type_operation == 1
-            ? "ENROLEMENT"
-            : "PRODUCTION",
-        equipes: [
-          {
-            nom: "EQUIPE A",
-            stats: {
-              date: dataStore.collectedData.date.replace("-", "/"),
-              nb_op: dataStore.collectedData.nbr_agent,
-              nb_kit: dataStore.collectedData.nbr_kit,
-              nb_imp: dataStore.collectedData.nbr_Imp,
-              cap_inst: dataStore.collectedData.objectif,
-              cap_rea: dataStore.collectedData.realise,
-              cap_no_re:
-                dataStore.collectedData.objectif -
-                  dataStore.collectedData.realise <
-                0
-                  ? dataStore.collectedData.objectif -
-                    dataStore.collectedData.realise
-                  : 0,
-              cap_dep:
-                dataStore.collectedData.realise -
-                  dataStore.collectedData.objectif >
-                0
-                  ? dataStore.collectedData.realise -
-                    dataStore.collectedData.objectif
-                  : 0,
-              horaires: {
-                "08h-17h": 38,
-              },
-            },
-          },
-        ],
-        times: ["08h-17h"],
-      },
-    ],
-  });
-  console.log(staticData);
-  
-  
-  const dates = ref(staticData.dates);
-  const times = ref(staticData.stats[0].times);
-  const filteredStats = ref(staticData.stats);
-  
-  // Filtres sélectionnés
-  const selectedRegion = ref("");
-  const selectedSite = ref("");
-  const selectedEquipe = ref("");
-  
-  // Calcul des régions uniques pour le filtre
-  const uniqueRegions = computed(() => {
-    return Array.from(new Set(staticData.stats.map((stat) => stat.region)));
-  });
-  
-  // Calcul des sites uniques pour le filtre
-  const uniqueSites = computed(() => {
-    return Array.from(new Set(staticData.stats.map((stat) => stat.site_in_situ)));
-  });
-  
-  // Calcul des équipes uniques pour le filtre
-  const uniqueEquipes = computed(() => {
-    const equipes = staticData.stats.flatMap((stat) =>
-      stat.equipes.map((equipe) => equipe.nom)
-    );
-    return Array.from(new Set(equipes));
-  });
-  
-  // Fonction pour récupérer une statistique par date
-  function getStatByDate(stats, date, key) {
-    const value = stats.date === date ? stats[key] : "--";
-    return value === 0 ? "--" : value;
-  }
-  
-  // Fonction pour récupérer une statistique par date et heure
-  function getStatByDateAndTime(stats, date, time) {
-    return stats.date === date ? stats.horaires[time] || "--" : "--";
-  }
-  
-  // Fonction pour exporter les données en fichier Excel
-  function exportToExcel() {
-    const workbook = XLSX.utils.book_new();
-    const worksheetData = [
-      [
-        "Région",
-        "Site",
-        "Activité",
-        "Équipe",
-        ...dates.value.flatMap((date) => [
-          `${date} Nb OP`,
-          `${date} Nb KIT`,
-          `${date} Nb IMP`,
-          `${date} Capacité Installée`,
-          `${date} Capacité Réalisée`,
-          `${date} Capacité Non Réalisée`,
-          `${date} Capacité Dépassée`,
-          ...times.value.map((time) => `${date} ${time}`),
-        ]),
-      ],
-    ];
-  
-    filteredStats.value.forEach((region) => {
-      region.equipes.forEach((equipe) => {
-        const row = [
-          region.region.toUpperCase(),
-          region.site_in_situ.toUpperCase(),
-          region.activite,
-          equipe.nom,
-          getStatByDate(equipe.stats, dates.value[0], "nb_op"),
-          getStatByDate(equipe.stats, dates.value[0], "nb_kit"),
-          getStatByDate(equipe.stats, dates.value[0], "nb_imp"),
-          getStatByDate(equipe.stats, dates.value[0], "objectif"),
-          getStatByDate(equipe.stats, dates.value[0], "realise"),
-          getStatByDate(equipe.stats, dates.value[0], "cap_no_re"),
-          getStatByDate(equipe.stats, dates.value[0], "cap_dep"),
-          ...times.value.map((time) =>
-            getStatByDateAndTime(equipe.stats, dates.value[0], time)
-          ),
-        ];
-        worksheetData.push(row);
-      });
-    });
-  
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Stats");
-    XLSX.writeFile(workbook, "Stats.xlsx");
-  }
-  
-  </script>
-  
-  <style scoped>
-  .signature{
-    width: 50%;
-    margin: 0 20px;
-  }
-  .checkbox{
-    display: flex;
-    justify-content: space-between;
-  }
-  .table-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-  
-  .styled-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: "Arial", sans-serif;
-    text-align: center;
-    font-size: 14px;
-    flex: 1;
-  }
-  
-  .styled-table th,
-  .styled-table td {
-    padding: 8px;
-    border: 1px solid #ddd;
-  }
-  
-  .styled-table thead tr:first-child {
-    background-color: #8b4513;
-    color: #ffffff;
-    font-weight: bold;
-  }
-  
-  .styled-table .header-region,
-  .styled-table .header-site,
-  .styled-table .header-equipe,
-  .styled-table .header-activite {
-    background-color: #8b4513;
-    color: white;
-    font-weight: bold;
-  }
-  
-  .styled-table .header-date {
-    background-color: #f4a460;
-    color: #000;
-    font-weight: bold;
-    text-align: center;
-  }
-  
-  .styled-table .header-nb-op,
-  .styled-table .header-nb-kit,
-  .styled-table .header-nb-imp,
-  .styled-table .header-time,
-  .header-obj {
-    background-color: #add8e6;
-    color: #000;
-    font-weight: bold;
-  }
-  
-  .styled-table .region-cell,
-  .styled-table .site-cell,
-  .styled-table .team-cell,
-  .styled-table .activite-cell {
-    font-weight: bold;
-    background-color: #f5f5f5;
-  }
-  
-  .styled-table .header-time {
-    border-right: 1px solid #ddd;
-  }
-  
-  .export-button-container {
-     margin: 10px 5px;
-  }
-  
-  .styled-table .activite-cell {
-    white-space: pre-line;
-  }
-  
-  .filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-  
-  .filters > * {
-    flex: 1;
-    min-width: 200px;
-  }
-  </style>
-   -->
+</template>

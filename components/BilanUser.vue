@@ -37,6 +37,10 @@ const dataStore = useDataStore();
 const token = useTokenStore();
 const tranche = ref<any>([]);
 const previousSelection = ref([...selected.value]);
+const text2 = "Veuillez saisir : ";
+const text2Sub =
+  "- soit le nombre total d'enrôlements de l'équipe, soit le nombre d'enrôlements faits par chaque agent.";
+const text2Sub1 = "- la tranche horaire pendant laquelle l'équipe a travaillé.";
 
 // Fonction appelée lors du changement de sélection
 const handleSelectChange = (id: number) => {
@@ -71,10 +75,12 @@ function formatTimeRange(startTime: any, endTime: any) {
 
 const selectedTimeRange = ref<any>(null);
 
+
+
 const state = reactive({
   inpusel: undefined,
   motif: undefined,
-  objectif: undefined,
+  objectif: 0,
 });
 
 watch(
@@ -142,7 +148,7 @@ const loadTableData = async (nbr_agent: any, realise: any, objectif: any) => {
   dataStore.updateData({
     nbr_agent: nbr_agent,
     realise: realise,
-    site_id_fk: token.getSiteId,
+    site_id_fk: token.getDataInfo.valid_roles_and_sites[0].id_site,
     objectif: objectif,
   });
 };
@@ -156,6 +162,29 @@ const addAgentDetail = (commentaire: any, agent_id_fk: any, id_pb: any) => {
   dataStore.addDetailAg(newDetail);
 };
 
+// function addOperationDetail(agentName: string, nbrEnrolled: number) {
+//   dataStore.addOperationDetail({ agentName, nbrEnrolled });
+// }
+
+function updateDetailOp() {
+  const detailop = selected.value.map((agent: any, index: number) => ({
+    agentName: agent.nom_agent,
+    nbrEnrolled: printerInputValuesArray.value[index] || 0,
+    id_agent: agent.id_agent,  // Add the agent ID here
+  }));
+  dataStore.updateData({ detailop });
+  console.log("Updated detailop:", detailop);
+}
+
+
+watch(
+  () => printerInputValuesArray.value,
+  () => {
+    updateDetailOp();
+  },
+  { deep: true }
+);
+
 watch(
   () => mainInputValue.value,
   () => {
@@ -166,12 +195,16 @@ watch(
 async function getDataAgent() {
   loading.value = true;
   const id = route.params.id_equipe;
+  console.log(id);
+  //console.log(token.getDataInfo.valid_roles_and_sites[0].id_site);
 
   try {
-    const response = await manage.getAgentsByEquipe(token.siteId);
-    console.log(response);
+    const response = await manage.getAgentsByEquipe(
+      token.getDataInfo.valid_roles_and_sites[0].id_site
+    );
+    console.log(response,'----------------');
 
-    rows.value = Object.values(response[0].agents);
+    rows.value = Object.values(response);
 
     selected.value = rows.value;
     printerInputValuesArray.value = rows.value.map(() => 0);
@@ -194,10 +227,23 @@ onMounted(() => {
 </script>
 
 <template>
+  <div>
+    <p class="text-xs font-thin italic text-gray-500">
+      *
+      {{ text2 }}
+    </p>
+    <div class="px-4 mt-0 pt-0">
+      <p class="text-xs italic text-orange-500 font-bold">
+        {{ text2Sub }} <br />
+        {{ text2Sub1 }}
+      </p>
+    </div>
+  </div>
+
   <UCard :ui="{ ring: 'ring-blue-500' }">
-    <div class="grid grid-cols-3 gap-64">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 2xl:gap-64">
       <div>
-        <p class="font-bold">Nombre total d'enrôlements</p>
+        <p class="font-bold text-sm">Nombre total d'enrôlements</p>
         <UInput
           v-model="mainInputValue"
           type="number"
@@ -205,7 +251,7 @@ onMounted(() => {
         />
       </div>
       <div>
-        <p class="font-bold">Tranche horaire</p>
+        <p class="font-bold text-sm">Tranche horaire</p>
         <USelect
           v-model="selectedTimeRange"
           :options="tranche.map((range: any) => ({
@@ -218,7 +264,7 @@ onMounted(() => {
         />
       </div>
       <div>
-        <p class="font-bold">Capacité installée</p>
+        <p class="font-bold text-sm">Capacité installée</p>
         <UInput
           type="number"
           v-model="state.objectif"
@@ -254,7 +300,7 @@ onMounted(() => {
             :loading="loading"
             :ui="{
               td: { padding: 'py-1 px-2' },
-              base: 'text-center',
+              base: 'text-start',
               th: { base: 'text-center' },
             }"
           >

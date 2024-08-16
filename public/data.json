@@ -1,0 +1,32 @@
+// {
+  
+//     "equipe": "EQUIPE A",
+//     "agents": 7,
+//     "imprimantes": 1,
+//     "kits": 2,
+//     "cap_inst": 100,
+//     "enrollement": 50
+  
+// }
+
+{
+  "equipe": "EQUIPE A",
+  "enrollement": 50,
+  "tranche_horaire":1,
+  "cap_inst": 100,
+  "agents":[
+    {
+      "nom":"agent In Situ 46",
+      "nbr":10
+    },
+    {
+      "nom":"agent In Situ 353",
+      "nbr":10
+    },
+    {
+      "nom":"agent In Situ 244",
+      "nbr":10
+    },
+  ]
+
+}

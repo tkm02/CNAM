@@ -33,14 +33,11 @@ async function handleSubmit(event: FormSubmitEvent<Schema>) {
       });
     }
 
-    token.setToken(response.data.access_token);
-    token.setId(response.data.data.id);
-    token.setSiteId(response.data.data.type_site_id);
-    token.setLocalities(response.data.data.localite);
-    token.setRegion(response.data.data.region);
-    token.setNom(response.data.data.nom);
+    console.log(response.data.data);
 
-    console.log(response.data);
+    token.updateInfo({ ...response.data });
+
+    console.log(token.data);
 
     navigateTo("/");
   } catch (error) {

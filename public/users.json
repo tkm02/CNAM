@@ -1,0 +1,47 @@
+[
+    {
+      "id": 1,
+      "username": "resp_site1",
+      "password": "password123",
+      "type": 1,
+      "name": "Jean Dupont",
+      "role": "Responsable de site"
+    },
+    {
+      "id": 2,
+      "username": "chef_equipeA",
+      "password": "password456",
+      "type": 2,
+      "name": "Marie Martin",
+      "role": "Chef d'équipe",
+      "equipe": "A"
+    },
+    {
+      "id": 3,
+      "username": "chef_equipeB",
+      "password": "password789",
+      "type": 2,
+      "name": "Pierre Durand",
+      "role": "Chef d'équipe",
+      "equipe": "B"
+    },
+    {
+      "id": 4,
+      "username": "chef_equipeC",
+      "password": "passwordabc",
+      "type": 2,
+      "name": "Sophie Lefebvre",
+      "role": "Chef d'équipe",
+      "equipe": "C"
+    },
+    {
+      "id": 5,
+      "username": "chef_equipeD",
+      "password": "passworddef",
+      "type": 2,
+      "name": "Lucas Moreau",
+      "role": "Chef d'équipe",
+      "equipe": "D"
+    }
+  ]
+  

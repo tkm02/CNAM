@@ -1,77 +1,71 @@
 export const useTokenStore = defineStore("token", {
   state() {
     return {
-      access_token: null,
-      id: null,
+      data: {
+        access_token: "",
+        agent: {
+          id: 0,
+          nom: "",
+          contact: "",
+          username: "",
+        },
+        valid_roles_and_sites: [
+          {
+            role_id: 0,
+            role_name: "",
+            site_name: "",
+            id_site: 0,
+            region: "",
+            equip_id: "",
+            nom_equipe: "",
+          },
+        ],
+      },
       loggedIn: false,
-      data: [],
-      siteId: null,
-      localites: null,
-      dateSelected: null,
-      region: null,
-      objectif: null,
-      nom: null,
+      date: "",
+      objectif: 0,
     };
   },
   persist: true,
   getters: {
+    getDataInfo: (state) => state.data,
     getStatus: (state) => state.loggedIn,
-    getToken: (state) => state.access_token,
-    getId: (state) => state.id,
-    getSiteId: (state) => state.siteId,
-    getLocalites: (state) => state.localites,
-    getData: (state) => state.data,
-    getDateSelected: (state) => state.dateSelected,
-    getRegion: (state) => state.region,
+    getDate: (state) => state.date,
     getObjectif: (state) => state.objectif,
-    getNom: (state) => state.nom,
   },
   actions: {
-    setToken(token: any) {
-      this.access_token = token;
+    updateInfo(newData: any) {
+      this.data = { ...this.data, ...newData };
       this.loggedIn = true;
     },
-
-    setLocalities(data: any) {
-      this.localites = data;
+    setDateSelected(date: any) {
+      this.date = date;
     },
-
-    setId(id: any) {
-      this.id = id;
+    setObjectif(objectif: any) {
+      this.objectif = objectif;
     },
-
-    setData(data: any) {
-      this.data = data;
-    },
-
-    setObjectif(object: any) {
-      this.objectif = object;
-    },
-
-    setRegion(region: any) {
-      this.region = region;
-    },
-
-    setDateSelected(d: any) {
-      this.dateSelected = d;
-    },
-
-    setSiteId(id: any) {
-      this.siteId = id;
-    },
-
-    setNom(nom: any) {
-      this.nom = nom;
-    },
-
-    deleteToken() {
-      this.access_token = null;
+    deleteInfo() {
       this.loggedIn = false;
-      this.id = null;
-      this.siteId = null;
-      this.dateSelected = null;
-      this.region = null;
-      this.objectif = null;
+      this.data = {
+        access_token: "",
+        agent: {
+          id: 0,
+          nom: "",
+          contact: "",
+          username: "",
+        },
+        valid_roles_and_sites: [
+          {
+            role_id: 0,
+            role_name: "",
+            site_name: "",
+            id_site: 0,
+            region: "",
+            equip_id: "",
+            nom_equipe: "",
+          },
+        ],
+      };
     },
   },
 });

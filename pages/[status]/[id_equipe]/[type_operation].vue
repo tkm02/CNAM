@@ -75,7 +75,8 @@ const nextStep = () => {
   if (activeStep.value < length.value) {
     activeStep.value++;
   } else {
-    handleSubmit();
+    // handleSubmit();
+    navigateTo("/tab-recap");
   }
 };
 
@@ -95,12 +96,12 @@ const previousStep = () => {
         <h1 class="text-center text-black font-bold text-2xl mb-5">
           Enregistrement du rapport {{ textOperation }} du
           <span class="text-blue-500">
-            {{ token.getDateSelected }}
+            {{ token.getDate }}
           </span>
         </h1>
         <h1 class="text-center font-semibold text-[#47A126] text-xl mb-3">
-          {{ activeStep == 0 ? title1 : title2 }}
-          <span v-if="activeStep !== 0" class="text-orange-500"
+          {{ activeStep == 1 ? title1 : title2 }}
+          <span v-if="activeStep !== 1" class="text-orange-500"
             >{{ formatEquipeName(equipe.replace("_", " ")) }}
             <span class="text-black">?</span></span
           >
@@ -110,30 +111,20 @@ const previousStep = () => {
     <div class="w-full flex justify-center mt-10">
       <div
         class="flex justify-start"
-        :class="activeStep == 0 ? 'w-[810px]' : 'w-[1250px]'"
+        :class="activeStep == 1 ? 'w-[810px]' : 'w-[1250px]'"
       >
         <div>
           <p
             class="text-xs font-thin italic"
-            :class="activeStep === 0 ? 'text-red-500' : 'text-gray-500'"
+            :class="activeStep === 1 ? 'text-red-500' : ''"
           >
-            *
-            {{ activeStep == 0 ? text : text2 }}
+            {{ activeStep == 1 ? "*" + text : "" }}
           </p>
-          <div class="px-4 mt-0 pt-0">
-            <p
-              class="text-xs italic text-orange-500 font-bold"
-              v-if="activeStep === 1"
-            >
-              {{ text2Sub }} <br />
-              {{ text2Sub1 }}
-            </p>
-          </div>
         </div>
       </div>
     </div>
     <div class="w-full flex justify-center mt-2">
-      <div class="grid grid-cols-1 gap-4" v-show="activeStep === 0">
+      <div class="grid grid-cols-1 gap-4" v-show="activeStep === 1">
         <TableWithoutInput />
 
         <div></div>
@@ -142,7 +133,7 @@ const previousStep = () => {
 
       <div
         class="w-3/6 flex flex-col justify-center space-y-4"
-        v-show="activeStep === 1"
+        v-show="activeStep === 0"
       >
         <BilanUser />
       </div>

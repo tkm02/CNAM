@@ -14,8 +14,6 @@ const route = useRoute();
 const rows = ref<{}[]>([]);
 const token = useTokenStore();
 const dataStore = useDataStore();
-const textOperation =
-  route.params.type_operation == "1" ? "enrôlement" : "production";
 
 const columns = [
   { key: "libelle" },
@@ -56,26 +54,30 @@ const loadTableData = async (date: string) => {
 async function getInfo(date: string) {
   loading.value = true;
   try {
-    const response = await manage.getStatTeam(token.getSiteId, date);
+    const response = await manage.getStatTeam(token.getDataInfo.agent.id, date);
 
-    // Récupérer toutes les équipes disponibles
-    const allTeams = await manage.getAgentsByEquipe(token.getSiteId);
+    console.log("recap : " + response);
+
+    // Récupérer les équipes depuis le token
+    const allTeams = token.getDataInfo.valid_roles_and_sites; // Supposons que les équipes sont stockées ici
 
     // Préparer un tableau pour stocker les équipes mises à jour
-    const updatedTeams = new Map<number, any>();
+    let data: any[] = [];
 
     if (response.length === 0) {
       // Lorsque la réponse est vide, préremplir toutes les équipes avec des valeurs à zéro
-      data = Object.values(allTeams).map((e: any) => ({
-        id_equipe: e.id_equipe,
-        libelle: e.equipe_name,
+      data = allTeams.map((e: any) => ({
+        id_equipe: e.equipe_id,
+        libelle: e.nom_equipe,
         nbr_agent: 0,
         nbr_imprimante: 0,
         nbr_kit: 0,
         type_operation: 0,
         realise: { value: 0, class: "bg-blue-500/50 text-white" },
-        objectif: 0, 
+        objectif: 0,
       }));
+
+      console.log(data);
     } else {
       // Filtrer les données pour ne conserver que celles avec type_operation == 1
       const filteredResponse = response.filter(
@@ -83,29 +85,27 @@ async function getInfo(date: string) {
       );
 
       // Mettre à jour les équipes existantes avec les données filtrées
-      const responseTeams = filteredResponse.map((e: any) => ({
-        id_equipe: e.id_equipe,
-        libelle: e.libelle,
-        nbr_agent: e.nbr_agent,
-        nbr_imprimante: e.nbr_imprimante,
-        nbr_kit: e.nbr_kit,
-        type_operation: e.type_operation,
-        realise: { value: e.realise, class: "bg-blue-500/50 text-white" },
-        objectif: e.objectif,
-      }));
+      const updatedTeams = new Map<number, any>();
 
-      const updatedTeams = new Map();
-
-      responseTeams.forEach((team: any) => {
-        updatedTeams.set(team.id_equipe, team);
+      filteredResponse.forEach((e: any) => {
+        updatedTeams.set(e.id_equipe, {
+          id_equipe: e.id_equipe,
+          libelle: e.libelle,
+          nbr_agent: e.nbr_agent,
+          nbr_imprimante: e.nbr_imprimante,
+          nbr_kit: e.nbr_kit,
+          type_operation: e.type_operation,
+          realise: { value: e.realise, class: "bg-blue-500/50 text-white" },
+          objectif: e.objectif,
+        });
       });
 
-      // Ajoutez les équipes sans données et préremplissez-les avec des valeurs à zéro
-      Object.values(allTeams).forEach((e: any) => {
-        if (!updatedTeams.has(e.id_equipe)) {
-          updatedTeams.set(e.id_equipe, {
-            id_equipe: e.id_equipe,
-            libelle: e.equipe_name,
+      // Ajouter les équipes sans données et préremplir avec des valeurs à zéro
+      allTeams.forEach((team: any) => {
+        if (!updatedTeams.has(team.id_equipe)) {
+          updatedTeams.set(team.id_equipe, {
+            id_equipe: team.id_equipe,
+            libelle: team.nom_equipe,
             nbr_agent: 0,
             nbr_imprimante: 0,
             nbr_kit: 0,
@@ -206,7 +206,6 @@ watch([selectedDate], () => {
       <template #actions-data="{ row }">
         <div class="flex space-x-2">
           <UButton
-            block
             :label="
               row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
                 ? 'Modifier'
@@ -228,6 +227,18 @@ watch([selectedDate], () => {
               row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
                 ? 'orange'
                 : 'primary'
+            "
+          />
+          <UButton
+            icon="i-heroicons-pencil"
+            label="Editer le pv"
+            color="orange"
+            @click="
+              reidirection(
+                row.libelle.replace(' ', '_'),
+                row.id_equipe,
+                props.typeOperation
+              )
             "
           />
         </div>
