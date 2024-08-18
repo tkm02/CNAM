@@ -1,18 +1,30 @@
 export const useManageStore = defineStore("manage", {
   actions: {
-    async getStatTeam(idSite:any, date: any) {
+    async getStatTeam(idSite: any, date: any) {
+      try {
+        const token = useTokenStore();
+        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
+
+        const response = await apiWithoutAuth.get(`v1/recap/${idSite}/${date}`);
+        console.log(response.data);
+
+        return response.data;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    async getTeamBySite() {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
           "http://57.128.30.4/api/",
           token
         );
-
         const response = await apiWithoutAuth.get(
-          `v1/recap/${idSite}/${date}`
+          `v1/ListeEquipeBySite/${token.getDataInfo.valid_roles_and_sites[0].id_site}`
         );
-       console.log(response.data);
-       
+
         return response.data;
       } catch (error) {
         throw error;
@@ -22,12 +34,11 @@ export const useManageStore = defineStore("manage", {
     async getKit(id: any) {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
-          token
-        );
+        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
 
-        const response = await apiWithoutAuth.get(`v1/listeEquipementBySite/${id}`);
+        const response = await apiWithoutAuth.get(
+          `v1/listeEquipementBySite/${id}`
+        );
         return response.data;
       } catch (error) {
         throw error;
@@ -37,10 +48,7 @@ export const useManageStore = defineStore("manage", {
     async getAgentsByEquipe(id: any) {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
-          token
-        );
+        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
 
         const response = await apiWithoutAuth.get(
           `v1/listeAgentByEquipe/${id}`

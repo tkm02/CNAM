@@ -54,11 +54,25 @@ const loadTableData = async (date: string) => {
 async function getInfo(date: string) {
   loading.value = true;
   try {
+    console.log(token.getDataInfo);
+
     const response = await manage.getStatTeam(token.getDataInfo.agent.id, date);
 
     console.log("recap : " + response);
 
-    const allTeams = token.getDataInfo.valid_roles_and_sites; // Supposons que les équipes sont stockées ici
+    let allTeams = token.getDataInfo.valid_roles_and_sites;
+
+    // Si role_id === 2, récupérer les équipes du site spécifique
+    if (token.getDataInfo.valid_roles_and_sites[0].role_id === 2) {
+      const siteId = token.getDataInfo.valid_roles_and_sites[0].id_site; // Supposons que l'ID du site est stocké ici
+      const teamsResponse = await manage.getTeamBySite();
+
+      console.log(teamsResponse);
+
+      if (teamsResponse) {
+        allTeams = teamsResponse;
+      }
+    }
 
     // Fonction pour créer un objet avec des valeurs par défaut
     const createDefaultTeam = (team: any, collectedData: any) => ({
@@ -68,7 +82,10 @@ async function getInfo(date: string) {
       nbr_imprimante: collectedData.nbr_Imp,
       nbr_kit: collectedData.nbr_kit,
       type_operation: collectedData.type_operation,
-      realise: { value: collectedData.realise, class: "bg-blue-500/50 text-white" },
+      realise: {
+        value: collectedData.realise,
+        class: "bg-blue-500/50 text-white",
+      },
       objectif: collectedData.objectif,
     });
 
@@ -76,7 +93,9 @@ async function getInfo(date: string) {
 
     if (response.length === 0) {
       // Utiliser les données de collectedData pour chaque équipe
-      data = allTeams.map((team: any) => createDefaultTeam(team, dataStore.collectedData));
+      data = allTeams.map((team: any) =>
+        createDefaultTeam(team, dataStore.collectedData)
+      );
     } else {
       const filteredResponse = response.filter(
         (e: any) => e.type_operation === Number(props.typeOperation)
@@ -99,7 +118,10 @@ async function getInfo(date: string) {
 
       allTeams.forEach((team: any) => {
         if (!updatedTeams.has(team.equipe_id)) {
-          updatedTeams.set(team.equipe_id, createDefaultTeam(team, dataStore.collectedData));
+          updatedTeams.set(
+            team.equipe_id,
+            createDefaultTeam(team, dataStore.collectedData)
+          );
         }
       });
 
@@ -115,7 +137,6 @@ async function getInfo(date: string) {
     loading.value = false;
   }
 }
-
 
 watch(
   () => selectedDate.value,
@@ -191,7 +212,10 @@ watch([selectedDate], () => {
         {{ row.realise.value }}
       </template>
       <template #actions-data="{ row }">
-        <div class="flex space-x-2">
+        <div
+          class="flex space-x-2"
+          v-if="token.getDataInfo.valid_roles_and_sites[0].role_id === 3"
+        >
           <UButton
             :label="
               row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
@@ -220,6 +244,21 @@ watch([selectedDate], () => {
             icon="i-heroicons-pencil"
             label="Editer le pv"
             color="orange"
+            @click="
+              reidirection(
+                row.libelle.replace(' ', '_'),
+                row.id_equipe,
+                props.typeOperation
+              )
+            "
+          />
+        </div>
+        <div v-else>
+          <UButton
+            :disabled="
+              dataStore.collectedData.globl_comment_superviseur != null
+            "
+            label="valider le pv"
             @click="
               reidirection(
                 row.libelle.replace(' ', '_'),

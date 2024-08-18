@@ -331,7 +331,7 @@ onMounted(() => {
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5 2xl:gap-64">
       <div>
         <p class="font-bold text-sm">Nombre total d'enrôlements</p>
-        <UInput v-model="mainInputValue" type="number" @input="resetTableInputs" />
+        <UInput v-model="mainInputValue" type="number" @input="resetTableInputs" :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2" />
       </div>
       <div>
         <p class="font-bold text-sm">Tranche horaire</p>
@@ -340,7 +340,7 @@ onMounted(() => {
             formatTimeRange(range.heure_debut, range.heure_fin),
           value: range.id,
         }))
-          " @change="handleSelectChange" />
+          " @change="handleSelectChange" :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2" />
       </div>
       <div>
         <p class="font-bold text-sm">Capacité installée</p>
@@ -362,7 +362,9 @@ onMounted(() => {
           }} -->
         </p>
         <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' } }">
-          <UTable :empty-state="{
+          <UTable 
+          :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2"
+          :empty-state="{
             icon: 'i-heroicons-circle-stack-20-solid',
             label: 'Aucune donnée disponible.',
           }" v-model="selected" :rows="rows" :columns="columns" :loading="loading" :ui="{
@@ -373,7 +375,7 @@ onMounted(() => {
             <template #actions-data="{ row, index }">
               <div class="w-full flex justify-center items-center">
                 <UInput type="number" v-model="printerInputValuesArray[index]" class="w-[70px]"
-                  @change="updateMainInputValue" />
+                  @change="updateMainInputValue" :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2" />
               </div>
             </template>
           </UTable>
