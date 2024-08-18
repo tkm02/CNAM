@@ -58,33 +58,30 @@ async function getInfo(date: string) {
 
     console.log("recap : " + response);
 
-    // Récupérer les équipes depuis le token
     const allTeams = token.getDataInfo.valid_roles_and_sites; // Supposons que les équipes sont stockées ici
 
-    // Préparer un tableau pour stocker les équipes mises à jour
+    // Fonction pour créer un objet avec des valeurs par défaut
+    const createDefaultTeam = (team: any, collectedData: any) => ({
+      id_equipe: team.equipe_id,
+      libelle: team.nom_equipe,
+      nbr_agent: collectedData.nbr_agent,
+      nbr_imprimante: collectedData.nbr_Imp,
+      nbr_kit: collectedData.nbr_kit,
+      type_operation: collectedData.type_operation,
+      realise: { value: collectedData.realise, class: "bg-blue-500/50 text-white" },
+      objectif: collectedData.objectif,
+    });
+
     let data: any[] = [];
 
     if (response.length === 0) {
-      // Lorsque la réponse est vide, préremplir toutes les équipes avec des valeurs à zéro
-      data = allTeams.map((e: any) => ({
-        id_equipe: e.equipe_id,
-        libelle: e.nom_equipe,
-        nbr_agent: 0,
-        nbr_imprimante: 0,
-        nbr_kit: 0,
-        type_operation: 0,
-        realise: { value: 0, class: "bg-blue-500/50 text-white" },
-        objectif: 0,
-      }));
-
-      console.log(data);
+      // Utiliser les données de collectedData pour chaque équipe
+      data = allTeams.map((team: any) => createDefaultTeam(team, dataStore.collectedData));
     } else {
-      // Filtrer les données pour ne conserver que celles avec type_operation == 1
       const filteredResponse = response.filter(
         (e: any) => e.type_operation === Number(props.typeOperation)
       );
 
-      // Mettre à jour les équipes existantes avec les données filtrées
       const updatedTeams = new Map<number, any>();
 
       filteredResponse.forEach((e: any) => {
@@ -100,26 +97,15 @@ async function getInfo(date: string) {
         });
       });
 
-      // Ajouter les équipes sans données et préremplir avec des valeurs à zéro
       allTeams.forEach((team: any) => {
-        if (!updatedTeams.has(team.id_equipe)) {
-          updatedTeams.set(team.id_equipe, {
-            id_equipe: team.id_equipe,
-            libelle: team.nom_equipe,
-            nbr_agent: 0,
-            nbr_imprimante: 0,
-            nbr_kit: 0,
-            type_operation: 0,
-            realise: { value: 0, class: "bg-blue-500/50 text-white" },
-            objectif: 0,
-          });
+        if (!updatedTeams.has(team.equipe_id)) {
+          updatedTeams.set(team.equipe_id, createDefaultTeam(team, dataStore.collectedData));
         }
       });
 
       data = Array.from(updatedTeams.values());
     }
 
-    // Trier les équipes par ordre alphabétique basé sur 'libelle'
     data.sort((a: any, b: any) => a.libelle.localeCompare(b.libelle));
 
     rows.value = data;
@@ -129,6 +115,7 @@ async function getInfo(date: string) {
     loading.value = false;
   }
 }
+
 
 watch(
   () => selectedDate.value,

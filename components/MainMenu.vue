@@ -58,8 +58,8 @@ const links: any = [
       label: "Déconnexion",
       click: () => {
         token.deleteInfo();
-        data.deleteData();
-        data.deleteDate();
+        // data.deleteData();
+        // data.deleteDate();
         navigateTo("/login");
       },
     },

@@ -58,7 +58,7 @@ export const useDataStore = defineStore("dataStore", {
         detailop: [],
         nbr_Imp: 0,
         nbr_kit: 0,
-        statut:'En attente',
+        statut: 'En attente',
         commentaire_globale_chief: "",
         globl_comment_superviseur: "",
         signature_chef: "",
@@ -72,17 +72,35 @@ export const useDataStore = defineStore("dataStore", {
       this.dateSelected = null;
     },
 
-    addDetailAg(detail: { commentaire: string; agent_id_fk: number }) {
-      // Ajoute un nouveau détail à l'objet detailag
-      this.collectedData.detailag.push(detail);
+    addDetailAg(detail: { commentaire: string; agent_id_fk: number; type_probleme_id_fk: number }) {
+      // Trouver le détail existant dans detailag
+      const existingDetailIndex = this.collectedData.detailag.findIndex(
+        (d: any) => d.agent_id_fk === detail.agent_id_fk
+      );
+
+      if (existingDetailIndex !== -1) {
+        // Mettre à jour le détail existant
+        this.collectedData.detailag[existingDetailIndex] = {
+          ...this.collectedData.detailag[existingDetailIndex],
+          commentaire: detail.commentaire,
+          type_probleme_id_fk: detail.type_probleme_id_fk,
+        };
+      } else {
+        // Ajouter un nouveau détail s'il n'existe pas déjà
+        this.collectedData.detailag.push(detail);
+      }
+
+      // Optionnel : Log pour débogage
       console.log("Updated detailag:", this.collectedData.detailag);
-      console.log("After update:", this.collectedData); // Log
     },
+
+
 
     addDetailEq(detail: {
       equipement_id_fk: number;
       commentaire: string;
-      id_pb: number;
+      type_probleme_id_fk: number;
+      statut: string;
     }) {
       const existingDetailIndex = this.collectedData.detaileq.findIndex(
         (d: any) => d.equipement_id_fk === detail.equipement_id_fk
@@ -102,6 +120,7 @@ export const useDataStore = defineStore("dataStore", {
       console.log("Updated detaileq:", this.collectedData.detaileq);
       console.log("After update:", this.collectedData);
     },
+
 
     addOperationDetail(
       agentName: string,

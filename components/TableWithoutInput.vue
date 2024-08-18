@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, reactive } from "vue";
-import { useRoute } from "vue-router";
 import { z } from "zod";
 
 definePageMeta({
@@ -74,33 +72,102 @@ const loadTableData = async (nbr_kit: number, nbr_imp: number) => {
   });
 };
 
+function deselectAndPrefillEquipment() {
+  dataStore.collectedData.detaileq.forEach((detail: any) => {
+    console.log("Processing detail:", detail);
+    if (detail.type_probleme_id_fk !== 0) {
+      // Décocher l'élément
+      if (detail.statut === "kit") {
+        selected.value = selected.value.filter((item: any) => item.id_equipement !== detail.equipement_id_fk);
+        mainInputValue.value = selected.value.length;
+      } else if (detail.statut === "imp") {
+        selectedImp.value = selectedImp.value.filter((item: any) => item.id_equipement !== detail.equipement_id_fk);
+        secondInputValue.value = selectedImp.value.length;
+      }
+      // Préremplir les entrées
+      const item = (detail.statut === "kit" ? rows.value : imps.value).find((i: any) => i.id_equipement === detail.equipement_id_fk);
+      if (item) {
+        item.commentaire = detail.commentaire;
+        item.selectedMotif = detail.type_probleme_id_fk;
+      }
+    }
+  });
+}
+
+
 async function getDataKit() {
   loading.value = true;
   try {
     const response = await manage.getKit(token.getDataInfo.valid_roles_and_sites[0].id_site);
+    console.log("Response from getKit:", response);
 
-    console.log(response);
+    if (response.length !== 0) {
+      imps.value = Object.values(route.params.type_operation === "1" ? response["5"] : response["6"]);
+      rows.value = Object.values(route.params.type_operation === "1" ? response["1"] : response["3"]);
 
-    if (response.length != 0) {
-      imps.value = Object.values(
-        route.params.type_operation == "1" ? response["5"] : response["6"]
-      );
-      rows.value = Object.values(
-        route.params.type_operation == "2" ? response["1"] : response["3"]
-      );
+      console.log("Rows:", rows.value);
+      console.log("Imps:", imps.value);
+
+      // Assurez-vous que les données sont bien préremplies
+      rows.value.forEach((row: any) => {
+        saveEquipmentDetail(row.id_equipement, "RAS", 0, "operationnel");
+      });
+
+      imps.value.forEach((imp: any) => {
+        saveEquipmentDetail(imp.id_equipement, "RAS", 0, "operationnel");
+      });
+
+      selected.value = rows.value;
+      selectedImp.value = imps.value;
+      token.setObjectif(selected.value.length * 50);
+
+      // Appeler la fonction pour décocher et préremplir les équipements
+      deselectAndPrefillEquipment();
     }
-    selected.value = rows.value;
-    selectedImp.value = imps.value;
-
-    console.log(selected.value);
-
-    token.setObjectif(selected.value.length * 50);
   } catch (error) {
     console.log(error);
   } finally {
     loading.value = false;
   }
 }
+
+function saveEquipmentDetail(id: number, commentaire: string, type_probleme_id_fk: number, statut: string) {
+  const existingDetail = dataStore.collectedData.detaileq.find((detail: any) => detail.equipement_id_fk === id);
+  if (existingDetail) {
+    existingDetail.commentaire = commentaire;
+    existingDetail.type_probleme_id_fk = type_probleme_id_fk;
+    existingDetail.statut = statut;
+  } else {
+    dataStore.addDetailEq({
+      equipement_id_fk: id,
+      commentaire: commentaire,
+      type_probleme_id_fk: type_probleme_id_fk,
+      statut: statut,
+    });
+  }
+}
+
+function updateEquipmentDetail(id: number, commentaire: string, type_probleme_id_fk: number, statut:string) {
+  // Trouver l'équipement dans detaileq
+  const existingDetail = dataStore.collectedData.detaileq.find((detail: any) => detail.equipement_id_fk === id);
+
+  if (existingDetail) {
+    // Mettre à jour les détails
+    existingDetail.commentaire = commentaire;
+    existingDetail.type_probleme_id_fk = type_probleme_id_fk;
+    existingDetail.statut = statut
+  } else {
+    // Ajouter un nouveau détail s'il n'existe pas
+    dataStore.addDetailEq({
+      equipement_id_fk: id,
+      commentaire: commentaire,
+      type_probleme_id_fk: type_probleme_id_fk,
+      statut: statut, // Assurez-vous de gérer le statut également
+    });
+  }
+}
+
+
 
 function deselectItemOnChange(itemId: number, type: 'kit' | 'imp') {
   const items = type === 'kit' ? rows.value : imps.value;
@@ -116,7 +183,7 @@ function deselectItemOnChange(itemId: number, type: 'kit' | 'imp') {
         selectedImp.value = selectedImp.value.filter((i: any) => i.id_equipement !== itemId);
         secondInputValue.value = selectedImp.value.length;
       }
-      addEquipmentDetail(item.selectedMotif, item.id_equipement, item.commentaire);
+      updateEquipmentDetail(item.id_equipement, item.commentaire, item.selectedMotif, "non_operationnel");
     } else {
       // Si les deux champs sont vides, recocher l'élément s'il n'est pas déjà coché
       if (type === 'kit' && !selected.value.some((i: any) => i.id_equipement === itemId)) {
@@ -136,7 +203,7 @@ watch(
   () => {
     rows.value.forEach((row: any) => {
       if (row.selectedMotif || (row.commentaire && row.commentaire.trim() !== "")) {
-        addEquipmentDetail(row.selectedMotif, row.id_equipement, row.commentaire);
+        updateEquipmentDetail(row.id_equipement, row.commentaire, row.selectedMotif, "non_operationnel");
       }
       deselectItemOnChange(row.id_equipement, 'kit');
     });
@@ -149,7 +216,7 @@ watch(
   () => {
     imps.value.forEach((imp: any) => {
       if (imp.selectedMotif || (imp.commentaire && imp.commentaire.trim() !== "")) {
-        addEquipmentDetail(imp.selectedMotif, imp.id_equipement, imp.commentaire);
+        updateEquipmentDetail(imp.id_equipement, imp.commentaire, imp.selectedMotif, "non_operationnel");
       }
       deselectItemOnChange(imp.id_equipement, 'imp');
     });
@@ -170,7 +237,7 @@ watch(
         dataStore.removeDetailEq(item.id_equipement);
       } else if (item.selectedMotif || (item.commentaire && item.commentaire.trim() !== "")) {
         // Si l'item n'est pas sélectionné mais a un motif ou un commentaire, on l'ajoute à detaileq
-        addEquipmentDetail(item.selectedMotif, item.id_equipement, item.commentaire);
+        updateEquipmentDetail(item.id_equipement, item.commentaire, item.selectedMotif, "non_operationnel");
       }
 
       deselectItemOnChange(item.id_equipement, item.id_equipement in rows.value ? 'kit' : 'imp');
@@ -178,6 +245,12 @@ watch(
   },
   { deep: true }
 );
+
+watch([() => rows.value, () => imps.value], () => {
+  console.log("Updated rows:", rows.value);
+  console.log("Updated imps:", imps.value);
+});
+
 
 const addEquipmentDetail = (motif: any, id: any, commentaire: string) => {
   const newDetail: any = {
@@ -220,33 +293,20 @@ function showGlobalCommentModal() {
   <div>
     <div class="flex items-center space-x-4">
       <p style="font-weight: bold">Nombre de kits</p>
-      <UInput
-        v-model="mainInputValue"
-        class="w-[70px]"
-        type="number"
-        disabled
-      />
+      <UInput v-model="mainInputValue" class="w-[70px]" type="number" disabled />
     </div>
 
     <div class="mt-4">
       <p class="mb-3">Liste des kits utilisés</p>
-      <UCard
-        :ui="{
-          body: { padding: 'px-0 py-0 sm:p-0' },
-          base: 'w-[800px] h-[30]',
-        }"
-      >
-        <UTable
-          :empty-state="{
-            icon: 'i-heroicons-circle-stack-20-solid',
-            label: 'Aucune donnée disponible.',
-          }"
-          :loading="loading"
-          v-model="selected"
-          :rows="rows"
-          :columns="columns"
-          :ui="{ td: { padding: 'py-1 px-2' }, base: 'min-w-full' }"
-        >
+      <UCard :ui="{
+        body: { padding: 'px-0 py-0 sm:p-0' },
+        base: 'w-[800px] h-[30]',
+      }">
+        <UTable :empty-state="{
+          icon: 'i-heroicons-circle-stack-20-solid',
+          label: 'Aucune donnée disponible.',
+        }" :loading="loading" v-model="selected" :rows="rows" :columns="columns"
+          :ui="{ td: { padding: 'py-1 px-2' }, base: 'min-w-full' }">
           <template #id_equipement-data="{ row }">
             <p class="hidden">{{ row.id_equipement }}</p>
           </template>
@@ -254,16 +314,10 @@ function showGlobalCommentModal() {
             {{ truncateText(row.numero_serie, 10) }}
           </template>
           <template #motif-data="{ row }">
-            <USelect
-              placeholder="Motif de retrait"
-              variant="outline"
-              :options="[
-                { name: 'Panne', value: 1 },
-                { name: 'Maintenance', value: 2 },
-              ]"
-              v-model="row.selectedMotif"
-              option-attribute="name"
-            />
+            <USelect placeholder="Motif de retrait" variant="outline" :options="[
+              { name: 'Panne', value: 1 },
+              { name: 'Maintenance', value: 2 },
+            ]" v-model="row.selectedMotif" option-attribute="name" />
           </template>
           <template #commentaire-data="{ row }">
             <UTextarea v-model="row.commentaire" />
@@ -276,28 +330,17 @@ function showGlobalCommentModal() {
   <div class="mt-5">
     <div class="flex items-center space-x-4">
       <p style="font-weight: bold">Nombre d'imprimantes</p>
-      <UInput
-        v-model="secondInputValue"
-        class="w-[70px]"
-        type="number"
-        disabled
-      />
+      <UInput v-model="secondInputValue" class="w-[70px]" type="number" disabled />
     </div>
 
     <div class="mt-4">
       <p class="mb-3">Liste des imprimantes utilisées</p>
       <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[800px]' }">
-        <UTable
-          :empty-state="{
-            icon: 'i-heroicons-circle-stack-20-solid',
-            label: 'Aucune donnée disponible.',
-          }"
-          :loading="loading"
-          v-model="selectedImp"
-          :rows="imps"
-          :columns="columns"
-          :ui="{ td: { padding: 'py-1 px-2' }, base: 'min-w-full' }"
-        >
+        <UTable :empty-state="{
+          icon: 'i-heroicons-circle-stack-20-solid',
+          label: 'Aucune donnée disponible.',
+        }" :loading="loading" v-model="selectedImp" :rows="imps" :columns="columns"
+          :ui="{ td: { padding: 'py-1 px-2' }, base: 'min-w-full' }">
           <template #id_equipement-data="{ row }">
             <p class="hidden">{{ row.id_equipement }}</p>
           </template>
@@ -305,16 +348,10 @@ function showGlobalCommentModal() {
             {{ truncateText(row.numero_serie, 10) }}
           </template>
           <template #motif-data="{ row }">
-            <USelect
-              placeholder="Motif de retrait"
-              variant="outline"
-              :options="[
-                { name: 'Panne', value: 1 },
-                { name: 'Maintenance', value: 2 },
-              ]"
-              v-model="row.selectedMotif"
-              option-attribute="name"
-            />
+            <USelect placeholder="Motif de retrait" variant="outline" :options="[
+              { name: 'Panne', value: 1 },
+              { name: 'Maintenance', value: 2 },
+            ]" v-model="row.selectedMotif" option-attribute="name" />
           </template>
           <template #commentaire-data="{ row }">
             <UTextarea v-model="row.commentaire" />
@@ -325,11 +362,7 @@ function showGlobalCommentModal() {
   </div>
 
   <div class="text-center mt-8">
-    <UButton
-      label="Commentaire globale"
-      color="red"
-      @click="showGlobalCommentModal"
-    />
+    <UButton label="Commentaire globale" color="red" @click="showGlobalCommentModal" />
   </div>
 
   <UModal v-model="showModal">
@@ -342,12 +375,8 @@ function showGlobalCommentModal() {
       <div class="mt-2">
         <UForm :state="state" @submit="confirmRemoval">
           <UFormGroup name="message">
-            <UTextarea
-              v-model="state.message"
-              type="text"
-              placeholder="commentaire..."
-              class="mt-2 border border-gray-300 rounded-md"
-            />
+            <UTextarea v-model="state.message" type="text" placeholder="commentaire..."
+              class="mt-2 border border-gray-300 rounded-md" />
           </UFormGroup>
           <div class="mt-4 flex justify-end space-x-2">
             <UButton color="gray" label="Annuler" @click="closeModal" />

@@ -112,23 +112,12 @@ function getDate(id: any) {
   }
 }
 
-function getEquipe(nomEquipe: any) {
-  // Implémentez la logique ici pour retourner l'ID de l'équipe
-  // Assurez-vous que la valeur est bien un nombre
-  return nomEquipe ? parseInt(nomEquipe, 10) : 0;
-}
 
 function updateData() {
   loading.value = true;
   console.log(dataStore.collectedData);
 
-  // console.log(
-  //   tokenStore.getDataInfo.valid_roles_and_sites[0].equip_id)
-  // );
-
   try {
-    const equipeId =
-      tokenStore.getDataInfo.valid_roles_and_sites[0].equip_id ?? 0;
     data.value = [
       {
         region: tokenStore.getDataInfo.valid_roles_and_sites[0].region ?? "",
@@ -146,22 +135,20 @@ function updateData() {
         non_realise: {
           value:
             dataStore.collectedData.objectif > dataStore.collectedData.realise
-              ? String(
-                  dataStore.collectedData.objectif -
-                    dataStore.collectedData.realise
-                )
+              ? String(dataStore.collectedData.objectif - dataStore.collectedData.realise)
               : "-",
-          class: "bg-red-500/50 text-black",
+          class: dataStore.collectedData.objectif > dataStore.collectedData.realise
+            ? "bg-red-500/50 text-black"
+            : "bg-white text-black",
         },
         objectif_depasse: {
           value:
             dataStore.collectedData.realise > dataStore.collectedData.objectif
-              ? String(
-                  dataStore.collectedData.realise -
-                    dataStore.collectedData.objectif
-                )
+              ? String(dataStore.collectedData.realise - dataStore.collectedData.objectif)
               : "-",
-          class: "bg-green-500/50 text-white",
+          class: dataStore.collectedData.realise > dataStore.collectedData.objectif
+            ? "bg-green-500/50 text-white"
+            : "bg-white text-black",
         },
       },
     ];
@@ -185,14 +172,14 @@ function updateData() {
 async function handleSubmit() {
   loading.value = true;
   try {
-    const response = await dataStore.addData(dataStore.collectedData);
+    // const response = await dataStore.addData(dataStore.collectedData);
 
-    if (response.message == 201) {
-      navigateTo("/");
-    } else {
-      alert("Une erreur est survenue !");
-      console.log(response);
-    }
+    // if (response.message == 201) {
+    navigateTo("/");
+    // } else {
+    //   alert("Une erreur est survenue !");
+    //   console.log(response);
+    // }
   } catch (error) {
     console.log(error);
     toast.add({
@@ -259,25 +246,19 @@ onMounted(() => {
       <span class="text-lg font-thin">{{ date }}</span>
     </h1>
 
-    <UTable
-      class="mb-5"
-      :ui="{
-        tr: {
-          base: 'border border-gray-500',
-        },
-        th: {
-          base: 'bg-orange-500/50 border border-gray-500 text-center',
-          padding: 'py-1 px-2',
-        },
-        td: {
-          base: 'border border-gray-500 text-center',
-          padding: 'py-1 px-2',
-        },
-      }"
-      :columns="columns"
-      :rows="data"
-      :loading="loading"
-    >
+    <UTable class="mb-5" :ui="{
+      tr: {
+        base: 'border border-gray-500',
+      },
+      th: {
+        base: 'bg-orange-500/50 border border-gray-500 text-center',
+        padding: 'py-1 px-2',
+      },
+      td: {
+        base: 'border border-gray-500 text-center',
+        padding: 'py-1 px-2',
+      },
+    }" :columns="columns" :rows="data" :loading="loading">
       <template #objectif-data="{ row }">
         {{ row.objectif.value }}
       </template>
@@ -290,29 +271,21 @@ onMounted(() => {
     </UTable>
 
     <div class="flex justify-center">
-      <UCard
-        class="mb-5 w-[600px]"
-        :ui="{
-          body: { padding: 'px-0 py-0 sm:p-0' },
-          shadow: 'shadow-none',
-          rounded: 'rounded-none',
-        }"
-        :loading="loading"
-      >
-        <UTable
-          :ui="{
-            th: {
-              base: 'border border-gray-500 text-center',
-              padding: 'py-1 px-2',
-            },
-            td: {
-              base: 'border border-b- border-gray-500 text-center',
-              padding: 'py-1 px-2',
-            },
-          }"
-          :rows="comment"
-          :columns="columnsObservation"
-        >
+      <UCard class="mb-5 w-[600px]" :ui="{
+        body: { padding: 'px-0 py-0 sm:p-0' },
+        shadow: 'shadow-none',
+        rounded: 'rounded-none',
+      }" :loading="loading">
+        <UTable :ui="{
+          th: {
+            base: 'border border-gray-500 text-center',
+            padding: 'py-1 px-2',
+          },
+          td: {
+            base: 'border border-b- border-gray-500 text-center',
+            padding: 'py-1 px-2',
+          },
+        }" :rows="comment" :columns="columnsObservation">
           <template #caption>
             <caption>
               Observations
@@ -321,7 +294,7 @@ onMounted(() => {
           <template #chef_equipe>
             <ul>
               <li v-for="row in dataStore.collectedData.detaileq">
-                {{  }}
+                {{ }}
               </li>
             </ul>
           </template>
@@ -330,49 +303,43 @@ onMounted(() => {
     </div>
 
     <div class="flex justify-center">
-      <UCard
-        :ui="{
-          body: { padding: 'px-0 py-0 sm:p-0' },
-          shadow: 'shadow-none',
-          rounded: 'rounded-none',
-        }"
-        class="mb-5 w-[400px]"
-        :loading="loading"
-      >
-        <UTable
-          :ui="{
-            th: {
-              base: 'border border-gray-500 text-center',
-              padding: 'py-1 px-2',
-            },
-            td: {
-              base: 'border border-b- border-gray-500 text-center',
-              padding: 'py-1 px-2',
-            },
-          }"
-          :rows="rowsSignature"
-          :columns="columnsObservation"
-        >
+      <UCard :ui="{
+        body: { padding: 'px-0 py-0 sm:p-0' },
+        shadow: 'shadow-none',
+        rounded: 'rounded-none',
+      }" class="mb-5 w-[400px]" :loading="loading">
+        <UTable :ui="{
+          th: {
+            base: 'border border-gray-500 text-center',
+            padding: 'py-1 px-2',
+          },
+          td: {
+            base: 'border border-b- border-gray-500 text-center',
+            padding: 'py-1 px-2',
+          },
+        }" :rows="rowsSignature" :columns="columnsObservation">
           <template #caption>
             <caption>
               Signatures
             </caption>
           </template>
           <template #chef_equipe-data="{ row }">
-            <ESignature
-              v-show="
-                tokenStore.getDataInfo.valid_roles_and_sites[0].role_id === 3
-              "
-              @update-signature="handleSignatureUpdate"
-            />
+            <div v-if="dataStore.collectedData.signature_chef">
+              <img :src="dataStore.collectedData.signature_chef" alt="Signature Chef" class="w-20 h-20"/>
+            </div>
+            <div v-else>
+              <ESignature v-show="tokenStore.getDataInfo.valid_roles_and_sites[0].role_id === 3"
+                          @update-signature="handleSignatureUpdate" />
+            </div>
           </template>
           <template #superviseur-data="{ row }">
-            <ESignature
-              v-show="
-                tokenStore.getDataInfo.valid_roles_and_sites[0].role_id === 2
-              "
-              @update-signature="handleSignatureUpdate"
-            />
+            <div v-if="dataStore.collectedData.signature_superviseur">
+              <img :src="dataStore.collectedData.signature_superviseur" alt="Signature Superviseur" class="w-20 h-20"/>
+            </div>
+            <div v-else>
+              <ESignature v-show="tokenStore.getDataInfo.valid_roles_and_sites[0].role_id === 2"
+                          @update-signature="handleSignatureUpdate" />
+            </div>
           </template>
         </UTable>
       </UCard>

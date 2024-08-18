@@ -13,10 +13,7 @@ const title1 = "Confirmez les kits et imprimantes utilisées";
 const text = "Décochez un kit ou une imprimante s'il n'a pas été utilisé !";
 
 const title2 = "Quel a été la performance de l'";
-const text2 = "Veuillez saisir : ";
-const text2Sub =
   "- soit le nombre total d'enrôlements de l'équipe, soit le nombre d'enrôlements faits par chaque agent.";
-const text2Sub1 = "- la tranche horaire pendant laquelle l'équipe a travaillé.";
 const textOperation =
   route.params.type_operation == "1" ? "d'enrôlement" : "de production";
 
@@ -53,22 +50,6 @@ function formatEquipeName(equipe: string): string {
     .replace(/([a-z])([A-Z])/g, "$1 $2") // Ajoute un espace entre une lettre minuscule suivie d'une majuscule
     .toLowerCase() // Transforme tout en minuscules
     .replace(/\b\w/g, (letter) => letter.toUpperCase()); // Met en majuscule la première lettre de chaque mot
-}
-
-function formatTextForDisplay(elementId: string, isHTML: boolean = true): void {
-  const text =
-    "Veuillez saisir :\n - soit le nombre total d'enrôlements de l'équipe, soit le nombre d'enrôlements faits par chaque agent. \n- la tranche horaire pendant laquelle l'équipe a travaillé.";
-
-  const formattedText = isHTML ? text.replace(/\n/g, "<br>") : text;
-
-  const element = document.getElementById(elementId);
-  if (element) {
-    if (isHTML) {
-      element.innerHTML = formattedText;
-    } else {
-      element.textContent = formattedText;
-    }
-  }
 }
 
 const nextStep = () => {
