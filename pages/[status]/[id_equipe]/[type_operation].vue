@@ -80,7 +80,7 @@ const previousStep = () => {
             {{ token.getDate }}
           </span>
         </h1>
-        <h1 class="text-center font-semibold text-[#47A126] text-xl mb-3">
+        <h1 class="text-center font-semibold text-black text-xl mb-3">
           {{ activeStep == 1 ? title1 : title2 }}
           <span v-if="activeStep !== 1" class="text-orange-500"
             >{{ formatEquipeName(equipe.replace("_", " ")) }}

@@ -1,30 +1,5 @@
 <template>
   <v-container>
-    <div class="filters">
-      <USelect
-        v-model="selectedRegion"
-        :options="regions"
-        placeholder="Sélectionnez une région"
-      />
-      <USelect
-        v-model="selectedSite"
-        :options="sites"
-        placeholder="Sélectionnez un site"
-      />
-      <USelect
-        v-model="selectedActivite"
-        :options="activites"
-        placeholder="Sélectionnez une activité"
-      />
-      <USelect
-        v-model="selectedEquipe"
-        :options="equipes"
-        placeholder="Sélectionnez une équipe"
-      />
-      <UDatePicker v-model="startDate" placeholder="Date de début" />
-      <UDatePicker v-model="endDate" placeholder="Date de fin" />
-    </div>
-
     <div class="table-container">
       <v-simple-table class="styled-table">
         <thead>
@@ -48,10 +23,11 @@
               <th class="header-nb-op">Nb OP</th>
               <th class="header-nb-kit">Nb KIT</th>
               <th class="header-nb-imp">Nb IMP</th>
-              <th class="header-obj">Obj</th>
-              <th v-for="time in times" :key="time" class="header-time">
-                {{ time }}
-              </th>
+              <th class="header-obj">Capacité Instalée</th>
+              <th class="header-obj">Capacité Realisée</th>
+              <th class="header-obj">Capacité Non Realisée</th>
+              <th class="header-obj">Capacité Dépassée</th>
+              <th class="header-obj">Tranche Horaire</th>
             </template>
           </tr>
         </thead>
@@ -87,7 +63,10 @@
                 <td>{{ getStatByDate(equipe.stats, date, "nb_op") }}</td>
                 <td>{{ getStatByDate(equipe.stats, date, "nb_kit") }}</td>
                 <td>{{ getStatByDate(equipe.stats, date, "nb_imp") }}</td>
-                <td>{{ getStatByDate(equipe.stats, date, "obj") }}</td>
+                <td>{{ getStatByDate(equipe.stats, date, "cap_inst") }}</td>
+                <td>{{ getStatByDate(equipe.stats, date, "cap_rea") }}</td>
+                <td>{{ getStatByDate(equipe.stats, date, "cap_no_re") }}</td>
+                <td>{{ getStatByDate(equipe.stats, date, "cap_dep") }}</td>
                 <td
                   v-for="time in times"
                   :key="`${equipe.nom}-${date}-${time}`"
@@ -99,230 +78,257 @@
           </template>
         </tbody>
       </v-simple-table>
-     
     </div>
   </v-container>
+  <!-- <v-container>
+    <h1>Observation</h1>
+    <div>
+      <ul v-if="detaileq.length">
+        <li v-for="item in detaileq" :key="item.equipement_id_fk">
+          Commentaire : {{ item.commentaire }}
+        </li>
+      </ul>
+    </div>
+  </v-container> -->
+  <!-- <div class="signature">
+    <h3>Signature</h3>
+    <div class="checkbox">
+      <UCheckbox
+        v-model="selected"
+        name="equipe"
+        label="Responsable EQUIPE: OKA"
+      />
+      <UCheckbox
+        v-model="selected2"
+        name="site"
+        label="Responsable SITE : KASSE TAGBO"
+      />
+    </div>
+  </div> -->
+  <div class="export-button-container">
+    <!-- <UButton @click="exportToExcel" color="primary" class="m-4"
+      >Exporter en XLS</UButton
+    > -->
+    <UButton @click="exportToExcel" color="red">Exporter en pdf</UButton>
+  </div>
 </template>
 
-<script lang="ts" setup>
-import { ref, onMounted, computed } from "vue";
-import * as XLSX from "xlsx";
+<script setup>
+import { ref, computed, reactive, watch, onMounted } from "vue";
+
+const selected = ref(true);
+const selected2 = ref(true);
+
 const dataStore = useDataStore();
-interface Horaires {
-  [key: string]: number;
-}
+const tokenStore = useTokenStore();
+let detaileq = [];
+let detailag = [];
 
-interface Stat {
-  date: string;
-  nb_op: number;
-  nb_kit: number;
-  nb_imp: number;
-  obj: number;
-  horaires: Horaires;
-}
-
-interface Equipe {
-  nom: string;
-  stats: Stat[];
-}
-
-interface Region {
-  region: string;
-  site_in_situ: string;
-  activite: string;
-  equipes: Equipe[];
-}
-
-const dates = ref<string[]>([]);
-const times = ref<string[]>([]);
-const stats = ref<Region[]>([]);
-const route = useRoute();
-
-const selectedRegion = ref("");
-const selectedSite = ref("");
-const selectedActivite = ref("");
-const selectedEquipe = ref("");
-const startDate = ref("");
-const endDate = ref("");
-
-// Computed properties pour les options des filtres
-const regions = computed(() => [...new Set(stats.value.map((s) => s.region))]);
-const sites = computed(() => [
-  ...new Set(stats.value.map((s) => s.site_in_situ)),
-]);
-const activites = computed(() => [
-  ...new Set(stats.value.flatMap((s) => s.activite.split("\n"))),
-]);
-const equipes = computed(() => [
-  ...new Set(stats.value.flatMap((s) => s.equipes.map((e) => e.nom))),
-]);
-
-// Filtered stats
-const filteredStats = computed(() => {
-  return stats.value.filter(
-    (s) =>
-      (!selectedRegion.value || s.region === selectedRegion.value) &&
-      (!selectedSite.value || s.site_in_situ === selectedSite.value) &&
-      (!selectedActivite.value ||
-        s.activite.includes(selectedActivite.value)) &&
-      (!selectedEquipe.value ||
-        s.equipes.some((e) => e.nom === selectedEquipe.value)) &&
-      (!startDate.value ||
-        !endDate.value ||
-        s.equipes.some((e) =>
-          e.stats.some(
-            (stat) =>
-              new Date(stat.date) >= new Date(startDate.value) &&
-              new Date(stat.date) <= new Date(endDate.value)
-          )
-        ))
-  );
+const staticData = reactive({
+  dates: [],
+  stats: [],
 });
 
-async function getData() {
-  const id = route.params.id_user;
-  try {
-    const response = await dataStore.getStatByUser(id);
-    const formattedData = formatData(response);
-    dates.value = formattedData.dates;
-    times.value = formattedData.times;
-    stats.value = formattedData.stats;
-    console.log(id);
-  } catch (error) {
-    console.error(error);
+const dates = computed(() => staticData.dates);
+const times = computed(() => staticData.stats[0]?.times || []);
+const filteredStats = computed(() => staticData.stats);
+
+function getDate(id) {
+  switch (id) {
+    case 1:
+      return "08H-17H";
+      break;
+    case 2:
+      return "07H-14H";
+      break;
+    case 3:
+      return "14H-21H";
+      break;
+    case 4:
+      return "21H-07H";
+      break;
+
+    default:
+      return "-";
+      break;
   }
 }
-
-function formatHoraire(horaire: string) {
-  if (!horaire || typeof horaire !== "string" || horaire.trim() === "") {
-    return "--";
-  }
-  const [start, end] = horaire.split(" - ");
-  if (!start || !end || start.length < 5 || end.length < 5) {
-    return "--";
-  }
-  const startHour = start.slice(0, 2);
-  const endHour = end.slice(0, 2);
-  return `${startHour}h-${endHour}h`;
-}
-
-function formatData(apiResponse: any) {
-  const datesSet = new Set<string>();
-  const timesSet = new Set<string>();
-  const stats: Region[] = [];
-
-  function getActivite(type: number): string {
-    switch (type) {
-      case 1:
-        return "DISTRIBUTION";
-      case 2:
-        return "PRODCTION";
-      case 3:
-        return "ENROLEMENT";
-      default:
-        return "AUTRE";
-    }
-  }
-
-  apiResponse.forEach((regionData: any) => {
-    const regionStats: Region = {
-      region: regionData.region,
-      site_in_situ: regionData.localite,
-      activite: "",
-      equipes: [],
-    };
-
-    const equipeStatsMap = new Map<string, Stat[]>();
-    const activiteSet = new Set<string>();
-
-    regionData.equipe.forEach((equipeData: any) => {
-      const {
-        equipe,
-        date,
-        nb_op,
-        nb_kit,
-        nbr_imp,
-        horaire,
-        type,
-        objectif,
-        realise,
-      } = equipeData;
-      const formattedDate = new Date(date).toLocaleDateString("fr-FR");
-      datesSet.add(formattedDate);
-      const formattedHoraire = formatHoraire(horaire);
-      timesSet.add(formattedHoraire);
-
-      const activite = getActivite(type);
-      activiteSet.add(activite);
-
-      if (!equipeStatsMap.has(equipe)) {
-        equipeStatsMap.set(equipe, []);
-      }
-
-      const existingStats = equipeStatsMap
-        .get(equipe)
-        ?.find((stat) => stat.date === formattedDate);
-      if (existingStats) {
-        existingStats.nb_op += parseInt(nb_op, 10);
-        existingStats.nb_kit += parseInt(nb_kit, 10);
-        existingStats.nb_imp += parseInt(nbr_imp, 10);
-        existingStats.horaires[formattedHoraire] =
-          existingStats.horaires[formattedHoraire] || 0;
-      } else {
-        equipeStatsMap.get(equipe)?.push({
-          date: formattedDate,
-          nb_op: parseInt(nb_op, 10),
-          nb_kit: parseInt(nb_kit, 10),
-          nb_imp: parseInt(nbr_imp, 10),
-          obj: parseInt(objectif, 10),
-          horaires: {
-            [formattedHoraire]: realise,
-          },
-        });
-      }
-    });
-
-    regionStats.activite = Array.from(activiteSet)[0] || "NON SPECIFIE";
-
-    equipeStatsMap.forEach((stats, nom) => {
-      regionStats.equipes.push({ nom, stats });
-    });
-
-    stats.push(regionStats);
-  });
-
-  return {
-    dates: Array.from(datesSet),
-    times: Array.from(timesSet),
-    stats,
+function updateData() {
+  const dataStore = useDataStore();
+  const token = useTokenStore();
+  console.log(dataStore.collectedData);
+  
+  const fictiveData = {
+    date: "2024-08-19",
+    nbr_agent: 25,
+    nbr_kit: 10,
+    nbr_Imp: 5,
+    objectif: 100,
+    realise: 90,
+    tranche_horaire_id: 1, // "08H-17H"
+    detaileq: [
+      { equipement_id_fk: "123", commentaire: "Equipement OK" },
+      { equipement_id_fk: "456", commentaire: "Remplacement nécessaire" },
+    ],
+    detailag: [{ equipement_id_fk: "789", commentaire: "Réparé récemment" }],
   };
+
+  staticData.dates = [dataStore.collectedData.date.split("-").reverse().join("/") || ""];
+  staticData.stats = [
+    {
+      region: token.getDataInfo.valid_roles_and_sites[0].region,
+      site_in_situ: token.getDataInfo.valid_roles_and_sites[0].site_name,
+      activite:
+        dataStore.collectedData.type_operation == "1"
+          ? "ENROLEMENT"
+          : dataStore.collectedData.type_operation == "2"
+          ? "PRODUCTION"
+          : "DISTRIBUTION",
+      equipes: [
+        {
+          nom: token.getDataInfo.valid_roles_and_sites[0].nom_equipe,
+          stats: {
+            date: dataStore.collectedData.date?.replace("-", "/") || "",
+            nb_op: dataStore.collectedData.nbr_agent,
+            nb_kit: dataStore.collectedData.nbr_kit,
+            nb_imp: dataStore.collectedData.nbr_Imp,
+            cap_inst: dataStore.collectedData.objectif,
+            cap_rea: dataStore.collectedData.realise,
+            cap_no_re: Math.max(0, dataStore.collectedData.objectif - dataStore.collectedData.realise),
+            cap_dep: Math.max(0, dataStore.collectedData.realise - dataStore.collectedData.objectif),
+            horaires: {
+              [getDate(dataStore.collectedData.tranche_horaire_id)]: getDate(
+                dataStore.collectedData.tranche_horaire_id
+              ),
+            },
+          },
+        },
+        // {
+        //   nom: "EQUIPE B",
+        //   stats: {
+        //     date: fictiveData.date?.replace("-", "/") || "",
+        //     nb_op: fictiveData.nbr_agent - 5,
+        //     nb_kit: fictiveData.nbr_kit - 2,
+        //     nb_imp: fictiveData.nbr_Imp - 1,
+        //     cap_inst: fictiveData.objectif - 10,
+        //     cap_rea: fictiveData.realise - 5,
+        //     cap_no_re: Math.max(0, fictiveData.objectif - fictiveData.realise + 5),
+        //     cap_dep: Math.max(0, fictiveData.realise - fictiveData.objectif + 5),
+        //     horaires: {
+        //       [getDate(fictiveData.tranche_horaire_id)]: getDate(
+        //         fictiveData.tranche_horaire_id
+        //       ),
+        //     },
+        //   },
+        // },
+        // {
+        //   nom: "EQUIPE C",
+        //   stats: {
+        //     date: fictiveData.date?.replace("-", "/") || "",
+        //     nb_op: fictiveData.nbr_agent - 10,
+        //     nb_kit: fictiveData.nbr_kit - 3,
+        //     nb_imp: fictiveData.nbr_Imp - 2,
+        //     cap_inst: fictiveData.objectif - 20,
+        //     cap_rea: fictiveData.realise - 10,
+        //     cap_no_re: Math.max(0, fictiveData.objectif - fictiveData.realise + 10),
+        //     cap_dep: Math.max(0, fictiveData.realise - fictiveData.objectif + 10),
+        //     horaires: {
+        //       [getDate(fictiveData.tranche_horaire_id)]: getDate(
+        //         fictiveData.tranche_horaire_id
+        //       ),
+        //     },
+        //   },
+        // },
+      ],
+      times: [getDate(dataStore.collectedData.tranche_horaire_id)],
+    },
+  ];
 }
 
-const getStatByDate = (stats: Stat[], date: string, key: keyof Stat) => {
-  const stat = stats.find((stat) => stat.date === date);
-  return stat ? stat[key] : "-";
-};
+// Fonction pour mettre à jour les données
+function updateDatap() {
+  const newData = dataStore.collectedData;
+  console.log(newData);
 
-const getStatByDateAndTime = (stats: Stat[], date: string, time: string) => {
-  const stat = stats.find((stat) => stat.date === date);
-  return stat && stat.horaires[time] !== undefined ? stat.horaires[time] : "-";
-};
+  staticData.dates = [newData.date?.split("-").reverse().join("/") || ""];
+  staticData.stats = [
+    {
+      region: tokenStore.region,
+      site_in_situ: tokenStore.localites,
+      activite: newData.type_operation == 1 ? "ENROLEMENT" : "PRODUCTION",
+      equipes: [
+        {
+          nom: "EQUIPE A",
+          stats: {
+            date: newData.date?.replace("-", "/") || "",
+            nb_op: newData.nbr_agent,
+            nb_kit: newData.nbr_kit,
+            nb_imp: newData.nbr_Imp,
+            cap_inst: newData.objectif,
+            cap_rea: newData.realise,
+            cap_no_re: Math.max(0, newData.objectif - newData.realise),
+            cap_dep: Math.max(0, newData.realise - newData.objectif),
+            horaires: {
+              [getDate(newData.tranche_horaire_id)]: getDate(
+                newData.tranche_horaire_id
+              ),
+            },
+          },
+        },
+      ],
+      times: [getDate(newData.tranche_horaire_id)],
+    },
+  ];
+}
 
+function getDetailsIssues() {
+  detaileq = [...dataStore.collectedData.detaileq];
+  detailag = [...dataStore.collectedData.detailag];
+  console.log(detaileq);
+}
+
+// Fonction pour récupérer une statistique par date
+function getStatByDate(stats, date, key) {
+  return stats[key] ?? "--";
+}
+
+// Fonction pour récupérer une statistique par date et heure
+function getStatByDateAndTime(stats, date, time) {
+  return stats.horaires[time];
+}
+
+// Fonction pour exporter les données en fichier Excel
 function exportToExcel() {
-  const worksheet = XLSX.utils.table_to_sheet(
-    document.querySelector(".styled-table")
-  );
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-  XLSX.writeFile(workbook, "data.xlsx");
+  // ... (le code de la fonction reste inchangé)
 }
 
+// Watcher pour mettre à jour les données quand dataStore.collectedData change
+watch(() => dataStore.collectedData, updateData, { deep: true });
+
+watch(
+  () => dataStore.collectedData,
+  (newData) => {
+    getDetailsIssues();
+  },
+  { immediate: true }
+);
+
+// Initialisation des données au montage du composant
 onMounted(() => {
-  getData();
+  updateData();
+  getDetailsIssues();
 });
 </script>
 
 <style scoped>
+.signature {
+  width: 50%;
+  margin: 0 20px;
+}
+.checkbox {
+  display: flex;
+  justify-content: space-between;
+}
 .table-container {
   display: flex;
   flex-direction: column;
@@ -389,8 +395,7 @@ onMounted(() => {
 }
 
 .export-button-container {
-  margin-top: 16px;
-  text-align: center;
+  margin: 10px 5px;
 }
 
 .styled-table .activite-cell {

@@ -16,6 +16,7 @@ const token = useTokenStore();
 const dataStore = useDataStore();
 
 const columns = [
+  // {key: "id_equipe"},
   { key: "libelle" },
   { key: "nbr_agent", label: "Agents" },
   { key: "nbr_imprimante", label: "Imprimantes" },
@@ -75,26 +76,30 @@ async function getInfo(date: string) {
     }
 
     // Fonction pour créer un objet avec des valeurs par défaut
-    const createDefaultTeam = (team: any, collectedData: any) => ({
-      id_equipe: team.equipe_id,
-      libelle: team.nom_equipe,
-      nbr_agent: collectedData.nbr_agent,
-      nbr_imprimante: collectedData.nbr_Imp,
-      nbr_kit: collectedData.nbr_kit,
-      type_operation: collectedData.type_operation,
-      realise: {
-        value: collectedData.realise,
-        class: "bg-blue-500/50 text-white",
-      },
-      objectif: collectedData.objectif,
-    });
+    const createDefaultTeam = (team: any, collectedData: any, role: number) => {
+      const teamIdKey = role === 2 ? "id_equipe" : "equipe_id";
+      return {
+        id_equipe: team[teamIdKey],
+        libelle: team.nom_equipe,
+        nbr_agent: collectedData.nbr_agent,
+        nbr_imprimante: collectedData.nbr_Imp,
+        nbr_kit: collectedData.nbr_kit,
+        type_operation: collectedData.type_operation,
+        realise: {
+          value: collectedData.realise,
+          class: "bg-blue-500/50 text-white",
+        },
+        objectif: collectedData.objectif,
+      };
+    };
 
     let data: any[] = [];
+    const role = token.getDataInfo.valid_roles_and_sites[0].role_id; // Supposons que le rôle soit stocké dans dataStore.userRole
 
     if (response.length === 0) {
       // Utiliser les données de collectedData pour chaque équipe
       data = allTeams.map((team: any) =>
-        createDefaultTeam(team, dataStore.collectedData)
+        createDefaultTeam(team, dataStore.collectedData, role)
       );
     } else {
       const filteredResponse = response.filter(
@@ -104,8 +109,9 @@ async function getInfo(date: string) {
       const updatedTeams = new Map<number, any>();
 
       filteredResponse.forEach((e: any) => {
-        updatedTeams.set(e.id_equipe, {
-          id_equipe: e.id_equipe,
+        const teamIdKey = role === 2 ? "id_equipe" : "equipe_id";
+        updatedTeams.set(e[teamIdKey], {
+          id_equipe: e[teamIdKey],
           libelle: e.libelle,
           nbr_agent: e.nbr_agent,
           nbr_imprimante: e.nbr_imprimante,
@@ -117,10 +123,11 @@ async function getInfo(date: string) {
       });
 
       allTeams.forEach((team: any) => {
-        if (!updatedTeams.has(team.equipe_id)) {
+        const teamIdKey = role === 2 ? "id_equipe" : "equipe_id";
+        if (!updatedTeams.has(team[teamIdKey])) {
           updatedTeams.set(
-            team.equipe_id,
-            createDefaultTeam(team, dataStore.collectedData)
+            team[teamIdKey],
+            createDefaultTeam(team, dataStore.collectedData, role)
           );
         }
       });
@@ -154,6 +161,7 @@ function reidirection(nom_equipe: any, id_equipe: any, type_op: any) {
 
 onMounted(() => {
   const todayDate = new Date();
+  console.log("id" + props.typeOperation);
 
   const formattedDate = formatDate(todayDate, "-");
   getInfo(dateFormat(todayDate)).then(() => {
@@ -254,11 +262,10 @@ watch([selectedDate], () => {
           />
         </div>
         <div v-else>
+          <!-- {{row.id_equipe}} -->
           <UButton
-            :disabled="
-              dataStore.collectedData.globl_comment_superviseur != null
-            "
             label="valider le pv"
+            :disabled="dataStore.collectedData.globl_comment_superviseur != ''"
             @click="
               reidirection(
                 row.libelle.replace(' ', '_'),

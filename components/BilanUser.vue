@@ -75,8 +75,6 @@ function formatTimeRange(startTime: any, endTime: any) {
 
 const selectedTimeRange = ref<any>(null);
 
-
-
 const state = reactive({
   inpusel: undefined,
   motif: undefined,
@@ -113,7 +111,11 @@ function submitModal() {
   console.log("Reason:", modalReason.value);
 
   // Vérifier si l'élément désélectionné est dans la liste des sélectionnés
-  if (selected.value.some((item: any) => item.id_agent === removedItem.value.id_agent)) {
+  if (
+    selected.value.some(
+      (item: any) => item.id_agent === removedItem.value.id_agent
+    )
+  ) {
     // Désélectionner l'agent
     selected.value = selected.value.filter(
       (item: any) => item.id_agent !== removedItem.value.id_agent
@@ -121,12 +123,15 @@ function submitModal() {
   }
 
   // Mettre à jour les détails de l'agent
-  updatDetailAg(String(state.motif), removedItem.value.id_agent, Number(state.inpusel));
+  updatDetailAg(
+    String(state.motif),
+    removedItem.value.id_agent,
+    Number(state.inpusel)
+  );
 
   // Fermer la modal
   closeModal();
 }
-
 
 async function getData() {
   try {
@@ -152,7 +157,6 @@ function updateMainInputValue() {
   );
 }
 
-
 const loadTableData = async (nbr_agent: any, realise: any, objectif: any) => {
   dataStore.updateData({
     nbr_agent: nbr_agent,
@@ -162,7 +166,11 @@ const loadTableData = async (nbr_agent: any, realise: any, objectif: any) => {
   });
 };
 
-const addAgentDetail = (commentaire: string, agent_id_fk: number, id_pb: number) => {
+const addAgentDetail = (
+  commentaire: string,
+  agent_id_fk: number,
+  id_pb: number
+) => {
   const newDetail = {
     commentaire: commentaire,
     agent_id_fk: agent_id_fk,
@@ -171,9 +179,15 @@ const addAgentDetail = (commentaire: string, agent_id_fk: number, id_pb: number)
   dataStore.addDetailAg(newDetail);
 };
 
-function updatDetailAg(commentaire: string, agent_id_fk: number, id_pb: number) {
+function updatDetailAg(
+  commentaire: string,
+  agent_id_fk: number,
+  id_pb: number
+) {
   // Trouver l'élément existant dans detailop
-  const existingDetail = dataStore.collectedData.detailag.find((detail: any) => detail.agent_id_fk === agent_id_fk);
+  const existingDetail = dataStore.collectedData.detailag.find(
+    (detail: any) => detail.agent_id_fk === agent_id_fk
+  );
 
   if (existingDetail) {
     // Mettre à jour les détails existants
@@ -189,7 +203,26 @@ function updatDetailAg(commentaire: string, agent_id_fk: number, id_pb: number) 
   }
 }
 
+function getDate(id: any) {
+  switch (id) {
+    case 1:
+      return "08H-17H";
+      break;
+    case 2:
+      return "07H-14H";
+      break;
+    case 3:
+      return "14H-21H";
+      break;
+    case 4:
+      return "21H-07H";
+      break;
 
+    default:
+      return "-";
+      break;
+  }
+}
 
 // function addOperationDetail(agentName: string, nbrEnrolled: number) {
 //   dataStore.addOperationDetail({ agentName, nbrEnrolled });
@@ -199,7 +232,9 @@ function prefillTableInputs() {
   const collectedDetailOp = dataStore.collectedData.detailop || [];
 
   rows.value.forEach((row: any, index: number) => {
-    const matchingDetail = collectedDetailOp.find((detail: any) => detail.id_agent === row.id_agent);
+    const matchingDetail: any = collectedDetailOp.find(
+      (detail: any) => detail.id_agent === row.id_agent
+    );
     if (matchingDetail) {
       printerInputValuesArray.value[index] = matchingDetail.nbrEnrolled;
     } else {
@@ -216,8 +251,14 @@ function deselectAgentsWithProblems() {
   const detailag = dataStore.collectedData.detailag || [];
 
   selected.value = selected.value.filter((agent: any) => {
-    const matchingDetail = detailag.find((detail: any) => detail.agent_id_fk === agent.id_agent);
-    return !matchingDetail || (matchingDetail.commentaire === "RAS" && matchingDetail.type_probleme_id_fk === 0);
+    const matchingDetail = detailag.find(
+      (detail: any) => detail.agent_id_fk === agent.id_agent
+    );
+    return (
+      !matchingDetail ||
+      (matchingDetail.commentaire === "RAS" &&
+        matchingDetail.type_probleme_id_fk === 0)
+    );
   });
 
   // Mettre à jour les anciennes sélections pour la gestion de la modal
@@ -225,25 +266,25 @@ function deselectAgentsWithProblems() {
 }
 
 function prefillTimeSlot() {
-  const collectedTrancheHoraire = dataStore.collectedData.tranche_horaire_id || null;
+  const collectedTrancheHoraire =
+    dataStore.collectedData.tranche_horaire_id || null;
+  const collectedNbrEnrolled = dataStore.collectedData.realise || 0;
   if (collectedTrancheHoraire) {
-    tranche.value = collectedTrancheHoraire;
+    selectedTimeRange.value = collectedTrancheHoraire;
+    mainInputValue.value = collectedNbrEnrolled;
     handleSelectChange(collectedTrancheHoraire);
   }
 }
-
 
 function updateDetailOp() {
   const detailop = selected.value.map((agent: any, index: number) => ({
     agentName: agent.nom_agent,
     nbrEnrolled: printerInputValuesArray.value[index] || 0,
-    id_agent: agent.id_agent,  // Assurez-vous d'inclure l'ID de l'agent ici
+    id_agent: agent.id_agent, // Assurez-vous d'inclure l'ID de l'agent ici
   }));
   dataStore.updateData({ detailop });
   console.log("Updated detailop:", detailop);
 }
-
-
 
 watch(
   () => rows.value,
@@ -261,7 +302,6 @@ watch(
   { deep: true }
 );
 
-
 watch(
   () => mainInputValue.value,
   () => {
@@ -277,14 +317,14 @@ async function getDataAgent() {
 
   try {
     const response = await manage.getAgentsByEquipe(
-      token.getDataInfo.valid_roles_and_sites[0].id_site
+      id
     );
-    console.log(response, '----------------');
+    console.log(response, "----------------");
 
     rows.value = Object.values(response);
 
     rows.value.forEach((row: any) => {
-      addAgentDetail("RAS", row.id_agent, 0)
+      addAgentDetail("RAS", row.id_agent, 0);
     });
 
     selected.value = rows.value;
@@ -292,16 +332,15 @@ async function getDataAgent() {
     dataStore.updateData({ objectif: token.getObjectif });
     state.objectif = token.getObjectif; // Initialiser les valeurs de saisie à 0
 
-
-    prefillTableInputs()
-    deselectAgentsWithProblems()
+    prefillTableInputs();
+    prefillTimeSlot();
+    deselectAgentsWithProblems();
     // prefillTimeSlot()
   } catch (error) {
     console.log(error);
   } finally {
     loading.value = false;
   }
-
 }
 
 onMounted(() => {
@@ -331,21 +370,37 @@ onMounted(() => {
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5 2xl:gap-64">
       <div>
         <p class="font-bold text-sm">Nombre total d'enrôlements</p>
-        <UInput v-model="mainInputValue" type="number" @input="resetTableInputs" :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2" />
+        <UInput
+          v-model="mainInputValue"
+          type="number"
+          @input="resetTableInputs"
+          :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2"
+        />
       </div>
       <div>
         <p class="font-bold text-sm">Tranche horaire</p>
-        <USelect v-model="selectedTimeRange" :options="tranche.map((range: any) => ({
+        <USelect
+          v-model="selectedTimeRange"
+          :options="tranche.map((range: any) => ({
           label:
             formatTimeRange(range.heure_debut, range.heure_fin),
           value: range.id,
         }))
-          " @change="handleSelectChange" :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2" />
+          "
+          @change="handleSelectChange"
+          :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2"
+        />
       </div>
       <div>
         <p class="font-bold text-sm">Capacité installée</p>
-        <UInput type="number" v-model="state.objectif" @input="handleObjectifChange" disabled color="gray"
-          variant="outline" />
+        <UInput
+          type="number"
+          v-model="state.objectif"
+          @input="handleObjectifChange"
+          disabled
+          color="gray"
+          variant="outline"
+        />
       </div>
     </div>
   </UCard>
@@ -362,20 +417,33 @@ onMounted(() => {
           }} -->
         </p>
         <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' } }">
-          <UTable 
-          :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2"
-          :empty-state="{
-            icon: 'i-heroicons-circle-stack-20-solid',
-            label: 'Aucune donnée disponible.',
-          }" v-model="selected" :rows="rows" :columns="columns" :loading="loading" :ui="{
-            td: { padding: 'py-1 px-2' },
-            base: 'text-start',
-            th: { base: 'text-center' },
-          }">
+          <UTable
+            :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2"
+            :empty-state="{
+              icon: 'i-heroicons-circle-stack-20-solid',
+              label: 'Aucune donnée disponible.',
+            }"
+            v-model="selected"
+            :rows="rows"
+            :columns="columns"
+            :loading="loading"
+            :ui="{
+              td: { padding: 'py-1 px-2' },
+              base: 'text-start',
+              th: { base: 'text-center' },
+            }"
+          >
             <template #actions-data="{ row, index }">
               <div class="w-full flex justify-center items-center">
-                <UInput type="number" v-model="printerInputValuesArray[index]" class="w-[70px]"
-                  @change="updateMainInputValue" :disabled="token.getDataInfo.valid_roles_and_sites[0].role_id === 2" />
+                <UInput
+                  type="number"
+                  v-model="printerInputValuesArray[index]"
+                  class="w-[70px]"
+                  @change="updateMainInputValue"
+                  :disabled="
+                    token.getDataInfo.valid_roles_and_sites[0].role_id === 2
+                  "
+                />
               </div>
             </template>
           </UTable>
@@ -394,15 +462,26 @@ onMounted(() => {
         <div class="mt-2">
           <UForm :state="state">
             <UFormGroup>
-              <USelect placeholder="Motif de retrait" color="primary" variant="outline" :options="[
-                { name: 'Maladie', value: 1 },
-                { name: 'Congés', value: 2 },
-                { name: 'Autre', value: 3 },
-              ]" v-model="state.inpusel" option-attribute="name" />
+              <USelect
+                placeholder="Motif de retrait"
+                color="primary"
+                variant="outline"
+                :options="[
+                  { name: 'Maladie', value: 1 },
+                  { name: 'Congés', value: 2 },
+                  { name: 'Autre', value: 3 },
+                ]"
+                v-model="state.inpusel"
+                option-attribute="name"
+              />
             </UFormGroup>
             <UFormGroup>
-              <UTextarea v-model="state.motif" type="text" placeholder="Commentaire"
-                class="mt-2 w-full border border-gray-300 rounded-md" />
+              <UTextarea
+                v-model="state.motif"
+                type="text"
+                placeholder="Commentaire"
+                class="mt-2 w-full border border-gray-300 rounded-md"
+              />
             </UFormGroup>
           </UForm>
           <div class="mt-4 flex justify-end space-x-2">

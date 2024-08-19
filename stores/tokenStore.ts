@@ -16,7 +16,7 @@ export const useTokenStore = defineStore("token", {
             site_name: "",
             id_site: 0,
             region: "",
-            equip_id: "",
+            equipe_id: 0,
             nom_equipe: "",
           },
         ],

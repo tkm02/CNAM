@@ -88,6 +88,10 @@ const dataStore = useDataStore();
 const tokenStore = useTokenStore();
 const loading = ref(false);
 const date = ref("");
+const isActif = ref(
+  dataStore.collectedData.signature_chef != "" &&
+    dataStore.collectedData.signature_superviseur != ""
+);
 
 // Fonction pour mettre à jour les données
 
@@ -112,7 +116,6 @@ function getDate(id: any) {
   }
 }
 
-
 function updateData() {
   loading.value = true;
   console.log(dataStore.collectedData);
@@ -135,20 +138,28 @@ function updateData() {
         non_realise: {
           value:
             dataStore.collectedData.objectif > dataStore.collectedData.realise
-              ? String(dataStore.collectedData.objectif - dataStore.collectedData.realise)
+              ? String(
+                  dataStore.collectedData.objectif -
+                    dataStore.collectedData.realise
+                )
               : "-",
-          class: dataStore.collectedData.objectif > dataStore.collectedData.realise
-            ? "bg-red-500/50 text-black"
-            : "bg-white text-black",
+          class:
+            dataStore.collectedData.objectif > dataStore.collectedData.realise
+              ? "bg-red-500/50 text-black"
+              : "bg-white text-black",
         },
         objectif_depasse: {
           value:
             dataStore.collectedData.realise > dataStore.collectedData.objectif
-              ? String(dataStore.collectedData.realise - dataStore.collectedData.objectif)
+              ? String(
+                  dataStore.collectedData.realise -
+                    dataStore.collectedData.objectif
+                )
               : "-",
-          class: dataStore.collectedData.realise > dataStore.collectedData.objectif
-            ? "bg-green-500/50 text-white"
-            : "bg-white text-black",
+          class:
+            dataStore.collectedData.realise > dataStore.collectedData.objectif
+              ? "bg-green-500/50 text-black"
+              : "bg-white text-black",
         },
       },
     ];
@@ -172,14 +183,32 @@ function updateData() {
 async function handleSubmit() {
   loading.value = true;
   try {
-    // const response = await dataStore.addData(dataStore.collectedData);
+    const roleId = tokenStore.getDataInfo.valid_roles_and_sites[0].role_id;
 
-    // if (response.message == 201) {
-    navigateTo("/");
-    // } else {
-    //   alert("Une erreur est survenue !");
-    //   console.log(response);
-    // }
+    if (roleId === 3) {
+      const response = await dataStore.addData(dataStore.collectedData);
+
+      if (response.message == 201) {
+        if (
+          dataStore.collectedData.signature_chef != "" &&
+          dataStore.collectedData.signature_superviseur != ""
+        ) {
+          isActif.value = true;
+        } else {
+          navigateTo("/");
+        }
+      } else {
+        alert("Une erreur est survenue !");
+        console.log(response);
+      }
+    } else {
+      if (
+        dataStore.collectedData.signature_chef != "" &&
+        dataStore.collectedData.signature_superviseur != ""
+      ) {
+        isActif.value = true;
+      }
+    }
   } catch (error) {
     console.log(error);
     toast.add({
@@ -246,19 +275,27 @@ onMounted(() => {
       <span class="text-lg font-thin">{{ date }}</span>
     </h1>
 
-    <UTable class="mb-5" :ui="{
-      tr: {
-        base: 'border border-gray-500',
-      },
-      th: {
-        base: 'bg-orange-500/50 border border-gray-500 text-center',
-        padding: 'py-1 px-2',
-      },
-      td: {
-        base: 'border border-gray-500 text-center',
-        padding: 'py-1 px-2',
-      },
-    }" :columns="columns" :rows="data" :loading="loading">
+    <UTable
+      class="mb-5"
+      :ui="{
+        tr: {
+          base: 'border border-gray-500',
+        },
+        th: {
+          base: 'bg-orange-500/50 border border-gray-500 text-center',
+          padding: 'py-1 px-2',
+          color: 'text-black',
+        },
+        td: {
+          base: 'border border-gray-500 text-center',
+          padding: 'py-1 px-2',
+          color: 'text-black',
+        },
+      }"
+      :columns="columns"
+      :rows="data"
+      :loading="loading"
+    >
       <template #objectif-data="{ row }">
         {{ row.objectif.value }}
       </template>
@@ -271,53 +308,91 @@ onMounted(() => {
     </UTable>
 
     <div class="flex justify-center">
-      <UCard class="mb-5 w-[600px]" :ui="{
-        body: { padding: 'px-0 py-0 sm:p-0' },
-        shadow: 'shadow-none',
-        rounded: 'rounded-none',
-      }" :loading="loading">
-        <UTable :ui="{
-          th: {
-            base: 'border border-gray-500 text-center',
-            padding: 'py-1 px-2',
-          },
-          td: {
-            base: 'border border-b- border-gray-500 text-center',
-            padding: 'py-1 px-2',
-          },
-        }" :rows="comment" :columns="columnsObservation">
+      <UCard
+        class="mb-5 w-[600px]"
+        :ui="{
+          body: { padding: 'px-0 py-0 sm:p-0' },
+          shadow: 'shadow-none',
+          rounded: 'rounded-none',
+        }"
+        :loading="loading"
+      >
+        <UTable
+          :ui="{
+            th: {
+              base: 'border border-gray-500 text-center w-[25%]',
+              padding: 'py-1 px-2',
+            },
+            td: {
+              base: 'border border-b- border-gray-500 text-center w-[250px] text-left',
+              padding: 'py-1 px-2',
+            },
+          }"
+          :rows="comment"
+          :columns="columnsObservation"
+        >
           <template #caption>
             <caption>
               Observations
             </caption>
           </template>
-          <template #chef_equipe>
-            <ul>
-              <li v-for="row in dataStore.collectedData.detaileq">
-                {{ }}
-              </li>
-            </ul>
+          <template #chef_equipe-data="{ row }">
+            <div class="w-[100%] text-wrap">
+              <!-- <p class="mb-3">Observations détaillées :</p> -->
+              <ul
+                class="pl-4"
+                v-if="dataStore.collectedData.detaileq.length !== 0"
+              >
+                <li v-for="data in dataStore.collectedData.detaileq">
+                  <div v-if="data['type_probleme_id_fk'] !== 0" class="mb-4">
+                    <span class="font-bold">- motif</span> :
+                    {{
+                      data["type_probleme_id_fk"] == 1 ? "Panne" : "Maintenance"
+                    }}
+                    <br>
+                    <span class="font-bold">- commentaire</span> :
+                    {{ data["commentaire"] }} <br />
+                    <span class="font-bold">- nom equipement :</span>
+                    {{ data["nom_eq"] }}
+                  </div>
+                </li>
+              </ul>
+              <ul>
+                <li>
+                  <span class="font-bold">Commetaire global : </span
+                  >{{ row.chef_equipe ?? "RAS" }}
+                </li>
+              </ul>
+            </div>
           </template>
         </UTable>
       </UCard>
     </div>
 
     <div class="flex justify-center">
-      <UCard :ui="{
-        body: { padding: 'px-0 py-0 sm:p-0' },
-        shadow: 'shadow-none',
-        rounded: 'rounded-none',
-      }" class="mb-5 w-[400px]" :loading="loading">
-        <UTable :ui="{
-          th: {
-            base: 'border border-gray-500 text-center',
-            padding: 'py-1 px-2',
-          },
-          td: {
-            base: 'border border-b- border-gray-500 text-center',
-            padding: 'py-1 px-2',
-          },
-        }" :rows="rowsSignature" :columns="columnsObservation">
+      <UCard
+        :ui="{
+          body: { padding: 'px-0 py-0 sm:p-0' },
+          shadow: 'shadow-none',
+          rounded: 'rounded-none',
+        }"
+        class="mb-5 w-[400px]"
+        :loading="loading"
+      >
+        <UTable
+          :ui="{
+            th: {
+              base: 'border border-gray-500 text-center',
+              padding: 'py-1 px-2',
+            },
+            td: {
+              base: 'border border-b- border-gray-500 text-center',
+              padding: 'py-1 px-2',
+            },
+          }"
+          :rows="rowsSignature"
+          :columns="columnsObservation"
+        >
           <template #caption>
             <caption>
               Signatures
@@ -325,28 +400,47 @@ onMounted(() => {
           </template>
           <template #chef_equipe-data="{ row }">
             <div v-if="dataStore.collectedData.signature_chef">
-              <img :src="dataStore.collectedData.signature_chef" alt="Signature Chef" class="w-20 h-20"/>
+              <img
+                :src="dataStore.collectedData.signature_chef"
+                alt="Signature Chef"
+                class="w-20 h-20"
+              />
             </div>
             <div v-else>
-              <ESignature v-show="tokenStore.getDataInfo.valid_roles_and_sites[0].role_id === 3"
-                          @update-signature="handleSignatureUpdate" />
+              <ESignature
+                v-show="
+                  tokenStore.getDataInfo.valid_roles_and_sites[0].role_id === 3
+                "
+                @update-signature="handleSignatureUpdate"
+              />
             </div>
           </template>
           <template #superviseur-data="{ row }">
             <div v-if="dataStore.collectedData.signature_superviseur">
-              <img :src="dataStore.collectedData.signature_superviseur" alt="Signature Superviseur" class="w-20 h-20"/>
+              <img
+                :src="dataStore.collectedData.signature_superviseur"
+                alt="Signature Superviseur"
+                class="w-20 h-20"
+              />
             </div>
             <div v-else>
-              <ESignature v-show="tokenStore.getDataInfo.valid_roles_and_sites[0].role_id === 2"
-                          @update-signature="handleSignatureUpdate" />
+              <ESignature
+                v-show="
+                  tokenStore.getDataInfo.valid_roles_and_sites[0].role_id === 2
+                "
+                @update-signature="handleSignatureUpdate"
+              />
             </div>
           </template>
         </UTable>
       </UCard>
     </div>
 
-    <div class="text-center">
+    <div class="text-center" v-if="!isActif">
       <UButton label="Soumettre" size="lg" @click="handleSubmit" />
+    </div>
+    <div class="text-center" v-else>
+      <UButton label="Exporter en pdf" size="lg" color="red" />
     </div>
   </div>
 </template>

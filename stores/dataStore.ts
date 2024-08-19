@@ -7,6 +7,7 @@ export const useDataStore = defineStore("dataStore", {
       nbr_equipement: 0,
       nbr_Imp: 0,
       nbr_kit: 0,
+      nbr_mobi:0,
       type_equipement_id: 1,
       objectif: 0,
       date: "",
@@ -25,6 +26,7 @@ export const useDataStore = defineStore("dataStore", {
       statut: "En attente",
     },
     dateSelected: null,
+    validTrue: false
   }),
   persist: true,
   getters: {
@@ -58,6 +60,7 @@ export const useDataStore = defineStore("dataStore", {
         detailop: [],
         nbr_Imp: 0,
         nbr_kit: 0,
+        nbr_mobi: 0,
         statut: 'En attente',
         commentaire_globale_chief: "",
         globl_comment_superviseur: "",
@@ -72,7 +75,7 @@ export const useDataStore = defineStore("dataStore", {
       this.dateSelected = null;
     },
 
-    addDetailAg(detail: { commentaire: string; agent_id_fk: number; type_probleme_id_fk: number }) {
+    addDetailAg(detail: { commentaire: string; agent_id_fk: number; type_probleme_id_fk: number; nom_eq:string }) {
       // Trouver le détail existant dans detailag
       const existingDetailIndex = this.collectedData.detailag.findIndex(
         (d: any) => d.agent_id_fk === detail.agent_id_fk
@@ -101,6 +104,8 @@ export const useDataStore = defineStore("dataStore", {
       commentaire: string;
       type_probleme_id_fk: number;
       statut: string;
+      nom_eq: string;
+      type_eq:string;
     }) {
       const existingDetailIndex = this.collectedData.detaileq.findIndex(
         (d: any) => d.equipement_id_fk === detail.equipement_id_fk

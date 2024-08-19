@@ -41,7 +41,7 @@ const links: any = [
     },
     {
       label: "Recapitulatif",
-      to: `/recap/${token.getDataInfo.agent.id}`,
+      to: `/tab-recap`,
     },
 
     {

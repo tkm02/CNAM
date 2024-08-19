@@ -8,7 +8,8 @@ definePageMeta({
 const manage = useManageStore();
 const route = useRoute();
 const rows = ref<{}[]>([]);
-const imps = ref<any>([]);
+const imps = ref<{}[]>([]);
+const mobile = ref<{}[]>([]);
 const dataStore = useDataStore();
 const columns = [
   {
@@ -34,10 +35,12 @@ const columns = [
 
 const selected = ref<any>([]);
 const selectedImp = ref<any>([]);
+const selectedMobile = ref<any>([]);
 
 const showModal = ref(false);
 const mainInputValue = ref(0);
 const secondInputValue = ref(0);
+const thirdInputValue = ref(0);
 const loading = ref(false);
 const token = useTokenStore();
 
@@ -61,12 +64,19 @@ function truncateText(text: string, maxLength: number): string {
   return `${truncated}...`;
 }
 
-const loadTableData = async (nbr_kit: number, nbr_imp: number) => {
-  console.log("Data to update:", { nbr_equipement: nbr_kit + nbr_imp });
+const loadTableData = async (
+  nbr_kit: number,
+  nbr_imp: number,
+  nbr_mobi: number
+) => {
+  console.log("Data to update:", {
+    nbr_equipement: nbr_kit + nbr_imp + nbr_mobi,
+  });
   dataStore.updateData({
-    nbr_equipement: nbr_kit + nbr_imp,
+    nbr_equipement: nbr_kit + nbr_imp + nbr_mobi,
     nbr_Imp: nbr_imp,
     nbr_kit: nbr_kit,
+    nbr_mobi: nbr_mobi,
     equipe_id_fk: Number(route.params.id_equipe),
     type_operation: Number(route.params.type_operation),
   });
@@ -75,23 +85,38 @@ const loadTableData = async (nbr_kit: number, nbr_imp: number) => {
 function deselectAndPrefillEquipment() {
   dataStore.collectedData.detaileq.forEach((detail: any) => {
     console.log("Processing detail:", detail);
+
     if (detail.type_probleme_id_fk !== 0) {
       // Décocher l'élément
-      if (detail.statut === "kit") {
+      if (detail.type_eq === "kit") {
         selected.value = selected.value.filter(
           (item: any) => item.id_equipement !== detail.equipement_id_fk
         );
         mainInputValue.value = selected.value.length;
-      } else if (detail.statut === "imp") {
+      } else if (detail.type_eq === "imp") {
         selectedImp.value = selectedImp.value.filter(
           (item: any) => item.id_equipement !== detail.equipement_id_fk
         );
         secondInputValue.value = selectedImp.value.length;
+      } else if (detail.type_eq === "mobi" || detail.statut === "mobile") {
+        selectedMobile.value = selectedMobile.value.filter(
+          (item: any) => item.id_equipement !== detail.equipement_id_fk
+        );
+        thirdInputValue.value = selectedMobile.value.length;
       }
+
       // Préremplir les entrées
-      const item = (detail.statut === "kit" ? rows.value : imps.value).find(
+      const items =
+        detail.type_eq === "kit"
+          ? rows.value
+          : detail.statut === "imp"
+          ? imps.value
+          : selectedMobile.value; // Correction pour gérer les éléments "mobi" ou "mobile"
+
+      const item = items.find(
         (i: any) => i.id_equipement === detail.equipement_id_fk
       );
+
       if (item) {
         item.commentaire = detail.commentaire;
         item.selectedMotif = detail.type_probleme_id_fk;
@@ -99,6 +124,85 @@ function deselectAndPrefillEquipment() {
     }
   });
 }
+
+// async function getDataKit() {
+//   loading.value = true;
+//   try {
+//     const response = await manage.getKit(
+//       token.getDataInfo.valid_roles_and_sites[0].id_site
+//     );
+//     console.log("Response from getKit:", response);
+
+//     if (response) {
+//       imps.value = Object.values(
+//         route.params.type_operation === "1" ? response["5"] : response["6"]
+//       );
+//       rows.value = Object.values(
+//         route.params.type_operation === "1" ? response["1"] : response["3"]
+//       );
+//       mobile.value = Object.values(
+//         route.params.type_operation === "1" ? response["2"] : []
+//       );
+
+//       console.log("mobil" + mobile);
+
+//       // Assurez-vous que les données sont bien préremplies dans detaileq
+//       rows.value.forEach((row: any) => {
+//         saveEquipmentDetail(
+//           row.id_equipement,
+//           "RAS",
+//           0,
+//           "operationnel",
+//           row.nom_equipement
+//         );
+//       });
+
+//       imps.value.forEach((imp: any) => {
+//         saveEquipmentDetail(
+//           imp.id_equipement,
+//           "RAS",
+//           0,
+//           "operationnel",
+//           imp.nom_equipement
+//         );
+//       });
+
+//       mobile.value.forEach((mobi: any) => {
+//         saveEquipmentDetail(
+//           mobi.id_equipement,
+//           "RAS",
+//           0,
+//           "operationnel",
+//           mobi.nom_equipement
+//         );
+//       });
+
+//       // Ajouter les équipements au dataStore.collectedData.detaileq
+//       dataStore.collectedData.detaileq = [
+//         ...rows.value,
+//         ...imps.value,
+//         ...mobile.value,
+//       ].map((item:any) => ({
+//         equipement_id_fk: item.id_equipement,
+//         commentaire: "RAS",
+//         type_probleme_id_fk: 0,
+//         statut: "operationnel",
+//         nom_eq: item.nom_equipement,
+//       }));
+
+//       selected.value = rows.value;
+//       selectedImp.value = imps.value;
+//       selectedMobile.value = mobile.value;
+
+//       token.setObjectif(selected.value.length * 50);
+//       deselectAndPrefillEquipment();
+//     }
+//   } catch (error) {
+//     console.log(error);
+//   } finally {
+//     loading.value = false;
+//   }
+// }
 
 async function getDataKit() {
   loading.value = true;
@@ -108,7 +212,7 @@ async function getDataKit() {
     );
     console.log("Response from getKit:", response);
 
-    if (response.length !== 0) {
+    if (response) {
       imps.value = Object.values(
         route.params.type_operation === "1" ? response["5"] : response["6"]
       );
@@ -116,23 +220,11 @@ async function getDataKit() {
         route.params.type_operation === "1" ? response["1"] : response["3"]
       );
 
-      console.log("Rows:", rows.value);
-      console.log("Imps:", imps.value);
-
-      // Assurez-vous que les données sont bien préremplies
-      rows.value.forEach((row: any) => {
-        saveEquipmentDetail(row.id_equipement, "RAS", 0, "operationnel");
-      });
-
-      imps.value.forEach((imp: any) => {
-        saveEquipmentDetail(imp.id_equipement, "RAS", 0, "operationnel");
-      });
-
       selected.value = rows.value;
       selectedImp.value = imps.value;
-      token.setObjectif(selected.value.length * 50);
+      selectedMobile.value = mobile.value;
 
-      // Appeler la fonction pour décocher et préremplir les équipements
+      token.setObjectif(selected.value.length * 50);
       deselectAndPrefillEquipment();
     }
   } catch (error) {
@@ -146,21 +238,25 @@ function saveEquipmentDetail(
   id: number,
   commentaire: string,
   type_probleme_id_fk: number,
-  statut: string
+  statut: string,
+  nom_eq: string,
+  type_eq: string
 ) {
-  const existingDetail = dataStore.collectedData.detaileq.find(
+  const existingDetail: any = dataStore.collectedData.detaileq.find(
     (detail: any) => detail.equipement_id_fk === id
   );
   if (existingDetail) {
     existingDetail.commentaire = commentaire;
-    existingDetail.type_probleme_id_fk = type_probleme_id_fk;
+    existingDetail.type_probleme_id_fk = Number(type_probleme_id_fk);
     existingDetail.statut = statut;
   } else {
     dataStore.addDetailEq({
       equipement_id_fk: id,
       commentaire: commentaire,
-      type_probleme_id_fk: type_probleme_id_fk,
+      type_probleme_id_fk: Number(type_probleme_id_fk),
       statut: statut,
+      nom_eq: nom_eq,
+      type_eq: type_eq,
     });
   }
 }
@@ -169,31 +265,40 @@ function updateEquipmentDetail(
   id: number,
   commentaire: string,
   type_probleme_id_fk: number,
-  statut: string
+  statut: string,
+  nom_eq: string,
+  type_eq: string
 ) {
   // Trouver l'équipement dans detaileq
-  const existingDetail = dataStore.collectedData.detaileq.find(
+  const existingDetail: any = dataStore.collectedData.detaileq.find(
     (detail: any) => detail.equipement_id_fk === id
   );
 
   if (existingDetail) {
     // Mettre à jour les détails
     existingDetail.commentaire = commentaire;
-    existingDetail.type_probleme_id_fk = type_probleme_id_fk;
+    existingDetail.type_probleme_id_fk = Number(type_probleme_id_fk);
     existingDetail.statut = statut;
   } else {
     // Ajouter un nouveau détail s'il n'existe pas
     dataStore.addDetailEq({
       equipement_id_fk: id,
       commentaire: commentaire,
-      type_probleme_id_fk: type_probleme_id_fk,
-      statut: statut, // Assurez-vous de gérer le statut également
+      type_probleme_id_fk: Number(type_probleme_id_fk),
+      statut: statut,
+      nom_eq: nom_eq,
+      type_eq: type_eq,
     });
   }
 }
 
-function deselectItemOnChange(itemId: number, type: "kit" | "imp") {
-  const items = type === "kit" ? rows.value : imps.value;
+function deselectItemOnChange(itemId: number, type: "kit" | "imp" | "mobi") {
+  const items =
+    type === "kit"
+      ? rows.value
+      : type === "imp"
+      ? imps.value
+      : selectedMobile.value;
   const item = items.find((i: any) => i.id_equipement === itemId);
 
   if (item) {
@@ -201,114 +306,107 @@ function deselectItemOnChange(itemId: number, type: "kit" | "imp") {
       item.selectedMotif ||
       (item.commentaire && item.commentaire.trim() !== "")
     ) {
-      // Si une valeur est sélectionnée ou entrée, décocher l'élément
+      // Si un motif ou un commentaire est présent, désélectionner l'élément
       if (type === "kit") {
         selected.value = selected.value.filter(
           (i: any) => i.id_equipement !== itemId
         );
         mainInputValue.value = selected.value.length;
-      } else {
+      } else if (type === "imp") {
         selectedImp.value = selectedImp.value.filter(
           (i: any) => i.id_equipement !== itemId
         );
         secondInputValue.value = selectedImp.value.length;
+      } else if (type === "mobi") {
+        selectedMobile.value = selectedMobile.value.filter(
+          (i: any) => i.id_equipement !== itemId
+        );
+        thirdInputValue.value = selectedMobile.value.length;
       }
+
+      // Mise à jour des détails de l'équipement
       updateEquipmentDetail(
         item.id_equipement,
         item.commentaire,
         item.selectedMotif,
-        "non_operationnel"
+        "non_operationnel",
+        item.nom_equipement,
+        type
       );
-    } else {
-      // Si les deux champs sont vides, recocher l'élément s'il n'est pas déjà coché
-      if (
-        type === "kit" &&
-        !selected.value.some((i: any) => i.id_equipement === itemId)
-      ) {
-        selected.value.push(item);
-        mainInputValue.value = selected.value.length;
-      } else if (
-        type === "imp" &&
-        !selectedImp.value.some((i: any) => i.id_equipement === itemId)
-      ) {
-        selectedImp.value.push(item);
-        secondInputValue.value = selectedImp.value.length;
-      }
     }
-    loadTableData(mainInputValue.value, secondInputValue.value);
   }
 }
 
 watch(
-  () => rows.value,
-  () => {
-    rows.value.forEach((row: any) => {
+  () => [...rows.value, ...imps.value, ...mobile.value],
+  (newItems) => {
+    newItems.forEach((item: any) => {
+      const type =
+        item.id_equipement in rows.value
+          ? "kit"
+          : item.id_equipement in imps.value
+          ? "imp"
+          : "mobi";
       if (
-        row.selectedMotif ||
-        (row.commentaire && row.commentaire.trim() !== "")
-      ) {
-        updateEquipmentDetail(
-          row.id_equipement,
-          row.commentaire,
-          row.selectedMotif,
-          "non_operationnel"
-        );
-      }
-      deselectItemOnChange(row.id_equipement, "kit");
-    });
-  },
-  { deep: true }
-);
-
-watch(
-  () => imps.value,
-  () => {
-    imps.value.forEach((imp: any) => {
-      if (
-        imp.selectedMotif ||
-        (imp.commentaire && imp.commentaire.trim() !== "")
-      ) {
-        updateEquipmentDetail(
-          imp.id_equipement,
-          imp.commentaire,
-          imp.selectedMotif,
-          "non_operationnel"
-        );
-      }
-      deselectItemOnChange(imp.id_equipement, "imp");
-    });
-  },
-  { deep: true }
-);
-
-watch(
-  () => [...rows.value, ...imps.value],
-  (items) => {
-    items.forEach((item: any) => {
-      const isSelected = (
-        item.id_equipement in rows.value ? selected : selectedImp
-      ).value.some((i: any) => i.id_equipement === item.id_equipement);
-
-      if (isSelected) {
-        // Si l'item est sélectionné, on le retire de detaileq
-        dataStore.removeDetailEq(item.id_equipement);
-      } else if (
         item.selectedMotif ||
         (item.commentaire && item.commentaire.trim() !== "")
       ) {
-        // Si l'item n'est pas sélectionné mais a un motif ou un commentaire, on l'ajoute à detaileq
         updateEquipmentDetail(
           item.id_equipement,
           item.commentaire,
           item.selectedMotif,
-          "non_operationnel"
+          "non_operationnel",
+          item.nom_equipement,
+          type
         );
+        deselectItemOnChange(item.id_equipement, item.statut);
+      }
+    });
+  },
+  { deep: true }
+);
+
+watch(
+  () => [...rows.value, ...imps.value, ...mobile.value],
+  (items) => {
+    items.forEach((item: any) => {
+      // Déterminer la liste de sélection appropriée
+      const isSelected = (
+        item.id_equipement in rows.value
+          ? selected.value
+          : item.id_equipement in imps.value
+          ? selectedImp.value
+          : selectedMobile.value
+      ).some((i: any) => i.id_equipement === item.id_equipement);
+      // Déterminer le type d'équipement pour la désélection
+      const type =
+        item.id_equipement in rows.value
+          ? "kit"
+          : item.id_equipement in imps.value
+          ? "imp"
+          : "mobi";
+
+      if (!isSelected) {
+        // Si l'item n'est pas sélectionné, mais a un motif ou un commentaire, on l'ajoute à detaileq
+        if (
+          item.selectedMotif ||
+          (item.commentaire && item.commentaire.trim() !== "")
+        ) {
+          updateEquipmentDetail(
+            item.id_equipement,
+            item.commentaire,
+            item.selectedMotif,
+            "non_operationnel",
+            item.nom_equipement,
+            type
+          );
+        }
+      } else {
+        // Si l'item est sélectionné, ne pas le retirer de detaileq
+        // Vous pouvez ajouter ici une logique supplémentaire si nécessaire
       }
 
-      deselectItemOnChange(
-        item.id_equipement,
-        item.id_equipement in rows.value ? "kit" : "imp"
-      );
+      deselectItemOnChange(item.id_equipement, type);
     });
   },
   { deep: true }
@@ -332,7 +430,38 @@ onMounted(() => {
   getDataKit().then(() => {
     mainInputValue.value = selected.value.length;
     secondInputValue.value = selectedImp.value.length;
-    loadTableData(mainInputValue.value, secondInputValue.value);
+    thirdInputValue.value = selectedMobile.value.length;
+    loadTableData(
+      mainInputValue.value,
+      secondInputValue.value,
+      thirdInputValue.value
+    );
+
+    if (token.getDataInfo.valid_roles_and_sites[0].role_id == 3) {
+      // Assurez-vous que les données sont bien préremplies dans detaileq
+      const allEquipments = [...rows.value, ...imps.value, ...mobile.value];
+
+      allEquipments.forEach((item: any) => {
+        const type = rows.value.some(
+          (row: any) => row.id_equipement === item.id_equipement
+        )
+          ? "kit"
+          : imps.value.some(
+              (imp: any) => imp.id_equipement === item.id_equipement
+            )
+          ? "imp"
+          : "mobi";
+
+        saveEquipmentDetail(
+          item.id_equipement,
+          "RAS",
+          0,
+          "operationnel",
+          item.nom_equipement,
+          type
+        );
+      });
+    }
   });
 });
 
@@ -343,7 +472,7 @@ function closeModal() {
 }
 
 function confirmRemoval() {
-  console.log("Motif de suppression :", removalReason.value); 
+  console.log("Motif de suppression :", removalReason.value);
   if (token.getDataInfo.valid_roles_and_sites[0].role_id === 3) {
     dataStore.updateData({ commentaire_globale_chief: state.message });
   } else {
@@ -472,11 +601,72 @@ function showGlobalCommentModal() {
         </UTable>
       </UCard>
     </div>
+
+    <div class="mt-5">
+      <div class="flex items-center space-x-4">
+        <p style="font-weight: bold">Nombre des kits ultra mobile</p>
+        <UInput
+          v-model="thirdInputValue"
+          class="w-[70px]"
+          type="number"
+          disabled
+        />
+      </div>
+
+      <div class="mt-4">
+        <p class="mb-3">Liste des kits ultra mobiles</p>
+        <UCard
+          :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: 'w-[800px]' }"
+        >
+          <UTable
+            :empty-state="{
+              icon: 'i-heroicons-circle-stack-20-solid',
+              label: 'Aucune donnée disponible.',
+            }"
+            :loading="loading"
+            v-model="selectedMobile"
+            :rows="mobile"
+            :columns="columns"
+            :ui="{ td: { padding: 'py-1 px-2' }, base: 'min-w-full' }"
+          >
+            <template #id_equipement-data="{ row }">
+              <p class="hidden">{{ row.id_equipement }}</p>
+            </template>
+            <template #numero_serie-data="{ row }">
+              {{ truncateText(row.numero_serie, 10) }}
+            </template>
+            <template #motif-data="{ row }">
+              <USelect
+                placeholder="Motif de retrait"
+                variant="outline"
+                :options="[
+                  { name: 'Panne', value: 1 },
+                  { name: 'Maintenance', value: 2 },
+                ]"
+                v-model="row.selectedMotif"
+                option-attribute="name"
+                :disabled="
+                  token.getDataInfo.valid_roles_and_sites[0].role_id === 2
+                "
+              />
+            </template>
+            <template #commentaire-data="{ row }">
+              <UTextarea
+                v-model="row.commentaire"
+                :disabled="
+                  token.getDataInfo.valid_roles_and_sites[0].role_id === 2
+                "
+              />
+            </template>
+          </UTable>
+        </UCard>
+      </div>
+    </div>
   </div>
 
   <div class="text-center mt-8">
     <UButton
-      label="Commentaire globale"
+      label="Commentaire global"
       color="red"
       @click="showGlobalCommentModal"
     />
