@@ -58,8 +58,8 @@ const links: any = [
       label: "Déconnexion",
       click: () => {
         token.deleteInfo();
-        // data.deleteData();
-        // data.deleteDate();
+        data.deleteData();
+        data.deleteDate();
         navigateTo("/login");
       },
     },
@@ -78,7 +78,7 @@ onMounted(() => {
   <div class="s">
     <UHorizontalNavigation
       :links="links"
-      class="border-b border-gray-200 dark:border-gray-800 mb-4"
+      class="border-b border-gray-200 dark:border-gray-800"
       :ui="{
         before: 'hover:before:bg-transparent',
         active: 'text-orange-500 after:bg-transparent after:mt-4',

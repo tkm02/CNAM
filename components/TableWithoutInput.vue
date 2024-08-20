@@ -621,7 +621,7 @@ function showGlobalCommentModal() {
           <UTable
             :empty-state="{
               icon: 'i-heroicons-circle-stack-20-solid',
-              label: 'Aucune donnée disponible.',
+              label: 'Pas de kits ultra mobile dans ce site',
             }"
             :loading="loading"
             v-model="selectedMobile"

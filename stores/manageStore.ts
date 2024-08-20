@@ -69,5 +69,21 @@ export const useManageStore = defineStore("manage", {
         throw error;
       }
     },
+
+    async getAgentWhoNotTeam() {
+      try {
+        const token = useTokenStore();
+        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
+
+        const response = await apiWithoutAuth.get(
+          `v1/agentNotAssign/${token.getDataInfo.valid_roles_and_sites[0].id_site}`
+        );
+
+        return response.data;
+      } catch (error) {
+        throw error;
+      }
+    },
+
   },
 });

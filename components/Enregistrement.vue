@@ -65,7 +65,6 @@ async function getInfo(date: string) {
 
     // Si role_id === 2, récupérer les équipes du site spécifique
     if (token.getDataInfo.valid_roles_and_sites[0].role_id === 2) {
-      const siteId = token.getDataInfo.valid_roles_and_sites[0].id_site; // Supposons que l'ID du site est stocké ici
       const teamsResponse = await manage.getTeamBySite();
 
       console.log(teamsResponse);
@@ -144,6 +143,7 @@ async function getInfo(date: string) {
     loading.value = false;
   }
 }
+
 
 watch(
   () => selectedDate.value,
@@ -262,7 +262,7 @@ watch([selectedDate], () => {
           />
         </div>
         <div v-else>
-          <!-- {{row.id_equipe}} -->
+          <!-- {{ row.id_equipe }} -->
           <UButton
             label="valider le pv"
             :disabled="dataStore.collectedData.globl_comment_superviseur != ''"
