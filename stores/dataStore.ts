@@ -194,6 +194,19 @@ export const useDataStore = defineStore("dataStore", {
       }
     },
 
+    async getStatRecap(date:any) {
+      try {
+        const token = useTokenStore();
+        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
+
+        const response = await apiWithoutAuth.get(`v1/recapGlobale/${date}/${date}`);
+
+        return response.data;
+      } catch (error) {
+        throw error;
+      }
+    },
+
     async getStatByUser(idUser: any) {
       try {
         const token = useTokenStore();

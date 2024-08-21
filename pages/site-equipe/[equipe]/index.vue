@@ -1,60 +1,87 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-
-const people = [
-  { id: 1, name: "Wade Cooper" },
-  { id: 2, name: "Arlene Mccoy" },
-  { id: 3, name: "Devon Webb" },
-  { id: 4, name: "Tom Cook" },
-  { id: 5, name: "Tanya Fox" },
-  { id: 6, name: "Hellen Schmidt" },
-  { id: 7, name: "Caroline Schultz" },
-  { id: 8, name: "Mason Heaney" },
-  { id: 9, name: "Claudie Smitham" },
-  { id: 10, name: "Emil Schaefer" },
-];
-
-// Listes pour les éléments disponibles et sélectionnés
-const availablePeople = ref(people);
-const selectedPeople = ref<any>([]);
+const selectedPeople = ref<any[]>([]);
 const searchQuery = ref("");
 const maxVisibleItems = ref(5);
+const route = useRoute();
+const manage = useManageStore();
+const availablePeople = ref<any[]>([]);
 
-// Propriété calculée pour filtrer les éléments disponibles en fonction de la recherche
+async function getAgentNotAssign() {
+  try {
+    const response = await manage.getAgentWhoNotTeam();
+    if (response) {
+      availablePeople.value = response;
+    } else {
+      console.log("Aucun agent disponible n'a été trouvé.");
+    }
+  } catch (error) {
+    console.error(
+      "Erreur lors de la récupération des agents non assignés :",
+      error
+    );
+  }
+}
+
+async function getAgentByEquip() {
+  try {
+    const response = await manage.getAgentsByEquipe(
+      Number(route.params.equipe)
+    );
+    if (response) {
+      selectedPeople.value = response; // Remplir selectedPeople avec les agents de l'équipe
+    } else {
+      console.log("Aucun agent trouvé pour cette équipe.");
+    }
+  } catch (error) {
+    console.error(
+      "Erreur lors de la récupération des agents par équipe :",
+      error
+    );
+  }
+}
+
 const filteredAvailablePeople = computed(() => {
   if (!searchQuery.value) {
-    return availablePeople.value.slice(0, maxVisibleItems.value); // Affiche seulement 5 noms par défaut
+    return availablePeople.value.slice(0, maxVisibleItems.value);
   }
-  return availablePeople.value.filter((person) =>
-    person.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
+  return availablePeople.value
+    .filter((person: any) =>
+      person.nom.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+    .slice(0, maxVisibleItems.value);
 });
 
-// Fonction pour sélectionner des éléments
 const selectPeople = () => {
   const selected = availablePeople.value.filter(
     (person: any) => person.selected
   );
   selectedPeople.value.push(...selected);
   availablePeople.value = availablePeople.value.filter(
-    (person) => !person.selected
+    (person: any) => !person.selected
   );
 };
 
-// Fonction pour désélectionner des éléments
 const deselectPeople = () => {
-  const deselected = selectedPeople.value.filter((person) => person.selected);
+  const deselected = selectedPeople.value.filter(
+    (person: any) => person.selected
+  );
   availablePeople.value.push(...deselected);
   selectedPeople.value = selectedPeople.value.filter(
-    (person) => !person.selected
+    (person: any) => !person.selected
   );
 };
 
-// Fonction pour basculer la sélection
-const toggleSelection = (list, person) => {
-  const item = list.value.find((p) => p.id === person.id);
-  if (item) item.selected = !item.selected;
+const toggleSelection = (list: any, person: any) => {
+  const item = list.value.find((p: any) => p.agent_id === person.agent_id);
+  if (item) {
+    item.selected = !item.selected;
+  }
 };
+
+onMounted(() => {
+  getAgentNotAssign();
+  getAgentByEquip();
+});
 </script>
 
 <template>
@@ -63,7 +90,6 @@ const toggleSelection = (list, person) => {
       Ajouter les agents à l'équipe A
     </h1>
     <div class="flex flex-col md:flex-row justify-between items-center">
-      <!-- Carte des éléments disponibles -->
       <UCard class="flex-1 min-h-[300px] mb-4 md:mb-0 w-full">
         <template #header>
           <UInput
@@ -75,11 +101,11 @@ const toggleSelection = (list, person) => {
         </template>
         <div
           v-for="person in filteredAvailablePeople"
-          :key="person.id"
+          :key="person.agent_id"
           class="mb-4"
         >
           <UCheckbox
-            :label="person.name"
+            :label="person.nom"
             v-model="person.selected"
             @change="toggleSelection(availablePeople, person)"
           />
@@ -102,9 +128,13 @@ const toggleSelection = (list, person) => {
 
       <!-- Carte des éléments sélectionnés -->
       <UCard class="flex-1 min-h-[300px] w-full">
-        <div v-for="person in selectedPeople" :key="person.id" class="mb-4">
+        <div
+          v-for="person in selectedPeople"
+          :key="person.agent_id"
+          class="mb-4"
+        >
           <UCheckbox
-            :label="person.name"
+            :label="person.nom_agent"
             v-model="person.selected"
             @change="toggleSelection(selectedPeople, person)"
           />
@@ -113,4 +143,3 @@ const toggleSelection = (list, person) => {
     </div>
   </div>
 </template>
-

@@ -2,6 +2,8 @@
 const token = useTokenStore();
 const data = useDataStore();
 
+const roleId = token.getDataInfo.valid_roles_and_sites[0].role_id;
+
 const links: any = [
   [
     {
@@ -43,15 +45,19 @@ const links: any = [
       label: "Recapitulatif",
       to: `/tab-recap`,
     },
-
     {
       label: "Recapitulatif global",
       to: "/recap",
     },
-    {
-      label: "Site & Equipes",
-      to: "/site-equipe",
-    },
+    // Condition pour afficher "Site & Equipes" uniquement si role_id === 2
+    ...(roleId === 2
+      ? [
+          {
+            label: "Site & Equipes",
+            to: "/site-equipe",
+          },
+        ]
+      : []),
 
     {
       labelClass: "deco",
@@ -66,6 +72,7 @@ const links: any = [
   ],
 ];
 
+
 const isOpen = ref(false);
 
 onMounted(() => {
@@ -78,7 +85,7 @@ onMounted(() => {
   <div class="s">
     <UHorizontalNavigation
       :links="links"
-      class="border-b border-gray-200 dark:border-gray-800 mb-4"
+      class="border-b border-gray-200 dark:border-gray-800"
       :ui="{
         before: 'hover:before:bg-transparent',
         active: 'text-orange-500 after:bg-transparent after:mt-4',

@@ -345,6 +345,7 @@ onMounted(() => {
               >
                 <li v-for="data in dataStore.collectedData.detaileq">
                   <div v-if="data['type_probleme_id_fk'] !== 0" class="mb-4">
+                    <span class="font-bold">-{{ data["nom_eq"] }}</span>
                     <span class="font-bold">- motif</span> :
                     {{
                       data["type_probleme_id_fk"] == 1 ? "Panne" : "Maintenance"
@@ -352,8 +353,6 @@ onMounted(() => {
                     <br>
                     <span class="font-bold">- commentaire</span> :
                     {{ data["commentaire"] }} <br />
-                    <span class="font-bold">- nom equipement :</span>
-                    {{ data["nom_eq"] }}
                   </div>
                 </li>
               </ul>
