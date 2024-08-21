@@ -57,14 +57,15 @@ async function getInfo(date: string) {
   try {
     console.log(token.getDataInfo);
 
-    const response = await manage.getStatTeam(token.getDataInfo.agent.id, date);
+    const response = await manage.getStatTeam(token.getDataInfo.valid_roles_and_sites[0].id_site, date);
 
     console.log("recap : " + response);
 
     let allTeams = token.getDataInfo.valid_roles_and_sites;
+    const role = token.getDataInfo.valid_roles_and_sites[0].role_id;
 
-    // Si role_id === 2, récupérer les équipes du site spécifique
-    if (token.getDataInfo.valid_roles_and_sites[0].role_id === 2) {
+    // Cas où role_id === 2
+    if (role === 2) {
       const teamsResponse = await manage.getTeamBySite();
 
       console.log(teamsResponse);
@@ -72,13 +73,21 @@ async function getInfo(date: string) {
       if (teamsResponse) {
         allTeams = teamsResponse;
       }
+
+      // Filtrer les équipes selon `type_operation_id_fk`
+      allTeams = allTeams.filter(
+        (team: any) => team.type_operation_id_fk === Number(props.typeOperation)
+      );
+
+    } else if (role === 3) {
+      // Cas où role_id === 3 : Afficher uniquement l'équipe de l'utilisateur
+      allTeams = [token.getDataInfo.valid_roles_and_sites[0]];
     }
 
     // Fonction pour créer un objet avec des valeurs par défaut
-    const createDefaultTeam = (team: any, collectedData: any, role: number) => {
-      const teamIdKey = role === 2 ? "id_equipe" : "equipe_id";
+    const createDefaultTeam = (team: any, collectedData: any) => {
       return {
-        id_equipe: team[teamIdKey],
+        id_equipe: team.id_equipe || team.equipe_id,
         libelle: team.nom_equipe,
         nbr_agent: collectedData.nbr_agent,
         nbr_imprimante: collectedData.nbr_Imp,
@@ -93,25 +102,32 @@ async function getInfo(date: string) {
     };
 
     let data: any[] = [];
-    const role = token.getDataInfo.valid_roles_and_sites[0].role_id; // Supposons que le rôle soit stocké dans dataStore.userRole
 
     if (response.length === 0) {
-      // Utiliser les données de collectedData pour chaque équipe
+      // Utiliser les données de collectedData pour chaque équipe filtrée
       data = allTeams.map((team: any) =>
-        createDefaultTeam(team, dataStore.collectedData, role)
+        createDefaultTeam(team, dataStore.collectedData)
       );
     } else {
-      const filteredResponse = response.filter(
-        (e: any) => e.type_operation === Number(props.typeOperation)
+      let filteredResponse = response.filter(
+        (e: any) => Number(e.type_operation) === Number(props.typeOperation)
       );
 
       const updatedTeams = new Map<number, any>();
 
+      if (role === 3) {
+        // Filtrer pour ne garder que l'équipe que l'utilisateur dirige
+        const userTeamId = token.getDataInfo.valid_roles_and_sites[0].equipe_id;
+        filteredResponse = filteredResponse.filter(
+          (e: any) => Number(e.id_equipe) === Number(userTeamId)
+        );
+      }
+
+      // Mettre à jour updatedTeams avec les données filtrées
       filteredResponse.forEach((e: any) => {
-        const teamIdKey = role === 2 ? "id_equipe" : "equipe_id";
-        updatedTeams.set(e[teamIdKey], {
-          id_equipe: e[teamIdKey],
-          libelle: e.libelle,
+        updatedTeams.set(Number(e.id_equipe) || Number(e.equipe_id), {
+          id_equipe: e.id_equipe,
+          libelle: e.nom_equipe,
           nbr_agent: e.nbr_agent,
           nbr_imprimante: e.nbr_imprimante,
           nbr_kit: e.nbr_kit,
@@ -122,11 +138,11 @@ async function getInfo(date: string) {
       });
 
       allTeams.forEach((team: any) => {
-        const teamIdKey = role === 2 ? "id_equipe" : "equipe_id";
-        if (!updatedTeams.has(team[teamIdKey])) {
+        const teamIdKey = team.id_equipe || team.equipe_id;
+        if (!updatedTeams.has(teamIdKey)) {
           updatedTeams.set(
-            team[teamIdKey],
-            createDefaultTeam(team, dataStore.collectedData, role)
+            teamIdKey,
+            createDefaultTeam(team, dataStore.collectedData)
           );
         }
       });
@@ -135,14 +151,19 @@ async function getInfo(date: string) {
     }
 
     data.sort((a: any, b: any) => a.libelle.localeCompare(b.libelle));
+    console.log(data);
 
     rows.value = data;
+
+    console.log("rows " + JSON.stringify(rows.value));
+
   } catch (error) {
     console.log(error);
   } finally {
     loading.value = false;
   }
 }
+
 
 
 watch(
@@ -180,10 +201,7 @@ watch([selectedDate], () => {
   <UPopover :popper="{ placement: 'bottom-start' }">
     <div class="mb-5 flex">
       <h1>Enregistrement du</h1>
-      <UButton
-        icon="i-heroicons-calendar-days-20-solid"
-        :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })"
-      />
+      <UButton icon="i-heroicons-calendar-days-20-solid" :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })" />
     </div>
     <template #panel="{ close }">
       <DatePicker v-model="selectedDate" @close="close" />
@@ -192,21 +210,14 @@ watch([selectedDate], () => {
   <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: '' }">
     <!-- <div v-for="site in sites" :key="site.siteName"> -->
     <!-- <h2>{{ token.getLocalites }}</h2> -->
-    <UTable
-      :empty-state="{
-        icon: 'i-heroicons-circle-stack-20-solid',
-        label: 'Aucune donnée disponible.',
-      }"
-      :loading="loading"
-      :rows="rows"
-      :columns="columns"
-      class="utable"
-      :ui="{
-        td: { padding: 'py-1 px-1', base: 'text-center' },
-        base: 'min-w-[600px]',
-        th: { base: 'text-center' },
-      }"
-    >
+    <UTable :empty-state="{
+      icon: 'i-heroicons-circle-stack-20-solid',
+      label: 'Aucune donnée disponible.',
+    }" :loading="loading" :rows="rows" :columns="columns" class="utable" :ui="{
+      td: { padding: 'py-1 px-1', base: 'text-center' },
+      base: 'min-w-[600px]',
+      th: { base: 'text-center' },
+    }">
       <template #id_equipe-data="{ row }">
         <p class="hidden">{{ row.id_equipe }}</p>
       </template>
@@ -220,60 +231,40 @@ watch([selectedDate], () => {
         {{ row.realise.value }}
       </template>
       <template #actions-data="{ row }">
-        <div
-          class="flex space-x-2"
-          v-if="token.getDataInfo.valid_roles_and_sites[0].role_id === 3"
-        >
-          <UButton
-            :label="
-              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
-                ? 'Modifier'
-                : 'Ajouter'
-            "
-            @click="
+        <div class="flex space-x-2" v-if="token.getDataInfo.valid_roles_and_sites[0].role_id === 3">
+          <UButton :label="row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+            ? 'Modifier'
+            : 'Ajouter'
+            " @click="
               reidirection(
                 row.libelle.replace(' ', '_'),
                 row.id_equipe,
                 props.typeOperation
               )
-            "
-            :icon="
-              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+              " :icon="row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
                 ? 'i-heroicons-pencil'
                 : 'i-heroicons-plus'
-            "
-            :color="
-              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+                " :color="row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
                 ? 'orange'
                 : 'primary'
-            "
-          />
-          <UButton
-            icon="i-heroicons-pencil"
-            label="Editer le pv"
-            color="orange"
-            @click="
-              reidirection(
-                row.libelle.replace(' ', '_'),
-                row.id_equipe,
-                props.typeOperation
-              )
-            "
-          />
+                " />
+          <UButton icon="i-heroicons-pencil" label="Editer le pv" color="orange" @click="
+            reidirection(
+              row.libelle.replace(' ', '_'),
+              row.id_equipe,
+              props.typeOperation
+            )
+            " />
         </div>
         <div v-else>
           <!-- {{ row.id_equipe }} -->
-          <UButton
-            label="valider le pv"
-            :disabled="dataStore.collectedData.globl_comment_superviseur != ''"
-            @click="
-              reidirection(
-                row.libelle.replace(' ', '_'),
-                row.id_equipe,
-                props.typeOperation
-              )
-            "
-          />
+          <UButton label="valider le pv" :disabled="dataStore.collectedData.globl_comment_superviseur != ''" @click="
+            reidirection(
+              row.libelle.replace(' ', '_'),
+              row.id_equipe,
+              props.typeOperation
+            )
+            " />
         </div>
         <!-- <UButton
           v-if="
