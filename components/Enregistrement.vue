@@ -57,14 +57,25 @@ async function getInfo(date: string) {
   try {
     console.log(token.getDataInfo);
 
-    const response = await manage.getStatTeam(token.getDataInfo.valid_roles_and_sites[0].id_site, date);
+    let response;
+
+    if (token.getDataInfo.valid_roles_and_sites[0].role_id == 2) {
+      response = await manage.getStatTeam(
+        token.getDataInfo.valid_roles_and_sites[0].id_site,
+        date
+      );
+    } else {
+      response = await manage.getRecapEquipe(
+        token.getDataInfo.valid_roles_and_sites[0].equipe_id,
+        date
+      );
+    }
 
     console.log("recap : " + response);
 
     let allTeams = token.getDataInfo.valid_roles_and_sites;
     const role = token.getDataInfo.valid_roles_and_sites[0].role_id;
 
-    // Cas où role_id === 2
     if (role === 2) {
       const teamsResponse = await manage.getTeamBySite();
 
@@ -74,13 +85,10 @@ async function getInfo(date: string) {
         allTeams = teamsResponse;
       }
 
-      // Filtrer les équipes selon `type_operation_id_fk`
       allTeams = allTeams.filter(
         (team: any) => team.type_operation_id_fk === Number(props.typeOperation)
       );
-
     } else if (role === 3) {
-      // Cas où role_id === 3 : Afficher uniquement l'équipe de l'utilisateur
       allTeams = [token.getDataInfo.valid_roles_and_sites[0]];
     }
 
@@ -98,6 +106,7 @@ async function getInfo(date: string) {
           class: "bg-blue-500/50 text-white",
         },
         objectif: 0,
+        status:0
       };
     };
 
@@ -127,13 +136,14 @@ async function getInfo(date: string) {
       filteredResponse.forEach((e: any) => {
         updatedTeams.set(Number(e.id_equipe) || Number(e.equipe_id), {
           id_equipe: e.id_equipe,
-          libelle: e.nom_equipe,
+          libelle: e.nom_equipe || e.libelle,
           nbr_agent: e.nbr_agent,
           nbr_imprimante: e.nbr_imprimante,
           nbr_kit: e.nbr_kit,
           type_operation: e.type_operation,
           realise: { value: e.realise, class: "bg-blue-500/50 text-white" },
-          objectif: e.objectif,
+          objectif: e.objectif || e.capacite,
+          status:e.status
         });
       });
 
@@ -156,15 +166,12 @@ async function getInfo(date: string) {
     rows.value = data;
 
     console.log("rows " + JSON.stringify(rows.value));
-
   } catch (error) {
     console.log(error);
   } finally {
     loading.value = false;
   }
 }
-
-
 
 watch(
   () => selectedDate.value,
@@ -201,7 +208,10 @@ watch([selectedDate], () => {
   <UPopover :popper="{ placement: 'bottom-start' }">
     <div class="mb-5 flex">
       <h1>Enregistrement du</h1>
-      <UButton icon="i-heroicons-calendar-days-20-solid" :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })" />
+      <UButton
+        icon="i-heroicons-calendar-days-20-solid"
+        :label="format(selectedDate, 'd MMMM yyyy', { locale: fr })"
+      />
     </div>
     <template #panel="{ close }">
       <DatePicker v-model="selectedDate" @close="close" />
@@ -210,14 +220,21 @@ watch([selectedDate], () => {
   <UCard :ui="{ body: { padding: 'px-0 py-0 sm:p-0' }, base: '' }">
     <!-- <div v-for="site in sites" :key="site.siteName"> -->
     <!-- <h2>{{ token.getLocalites }}</h2> -->
-    <UTable :empty-state="{
-      icon: 'i-heroicons-circle-stack-20-solid',
-      label: 'Aucune donnée disponible.',
-    }" :loading="loading" :rows="rows" :columns="columns" class="utable" :ui="{
-      td: { padding: 'py-1 px-1', base: 'text-center' },
-      base: 'min-w-[600px]',
-      th: { base: 'text-center' },
-    }">
+    <UTable
+      :empty-state="{
+        icon: 'i-heroicons-circle-stack-20-solid',
+        label: 'Aucune donnée disponible.',
+      }"
+      :loading="loading"
+      :rows="rows"
+      :columns="columns"
+      class="utable"
+      :ui="{
+        td: { padding: 'py-1 px-1', base: 'text-center' },
+        base: 'min-w-[600px]',
+        th: { base: 'text-center' },
+      }"
+    >
       <template #id_equipe-data="{ row }">
         <p class="hidden">{{ row.id_equipe }}</p>
       </template>
@@ -231,40 +248,60 @@ watch([selectedDate], () => {
         {{ row.realise.value }}
       </template>
       <template #actions-data="{ row }">
-        <div class="flex space-x-2" v-if="token.getDataInfo.valid_roles_and_sites[0].role_id === 3">
-          <UButton :label="row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
-            ? 'Modifier'
-            : 'Ajouter'
-            " @click="
+        <div
+          class="flex space-x-2"
+          v-if="token.getDataInfo.valid_roles_and_sites[0].role_id === 3"
+        >
+          <UButton
+            :label="
+              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+                ? 'Modifier'
+                : 'Ajouter'
+            "
+            @click="
               reidirection(
                 row.libelle.replace(' ', '_'),
                 row.id_equipe,
                 props.typeOperation
               )
-              " :icon="row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+            "
+            :icon="
+              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
                 ? 'i-heroicons-pencil'
                 : 'i-heroicons-plus'
-                " :color="row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
+            "
+            :color="
+              row.nombre_agent > 0 || row.nbr_imprimante > 0 || row.nbr_kit > 0
                 ? 'orange'
                 : 'primary'
-                " />
-          <UButton icon="i-heroicons-pencil" label="Editer le pv" color="orange" @click="
-            reidirection(
-              row.libelle.replace(' ', '_'),
-              row.id_equipe,
-              props.typeOperation
-            )
-            " />
+            "
+          />
+          <UButton
+            icon="i-heroicons-pencil"
+            label="Editer le pv"
+            color="orange"
+            @click="
+              reidirection(
+                row.libelle.replace(' ', '_'),
+                row.id_equipe,
+                props.typeOperation
+              )
+            "
+          />
         </div>
         <div v-else>
           <!-- {{ row.id_equipe }} -->
-          <UButton label="valider le pv" :disabled="dataStore.collectedData.globl_comment_superviseur != ''" @click="
-            reidirection(
-              row.libelle.replace(' ', '_'),
-              row.id_equipe,
-              props.typeOperation
-            )
-            " />
+          <UButton
+            label="valider le pv"
+            :disabled="Number(row.status) === 1"
+            @click="
+              reidirection(
+                row.libelle.replace(' ', '_'),
+                row.id_equipe,
+                props.typeOperation
+              )
+            "
+          />
         </div>
         <!-- <UButton
           v-if="

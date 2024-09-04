@@ -7,7 +7,7 @@ export const useDataStore = defineStore("dataStore", {
       nbr_equipement: 0,
       nbr_Imp: 0,
       nbr_kit: 0,
-      nbr_mobi:0,
+      nbr_mobi: 0,
       type_equipement_id: 1,
       objectif: 0,
       date: "",
@@ -23,10 +23,11 @@ export const useDataStore = defineStore("dataStore", {
       globl_comment_superviseur: "",
       signature_chef: "",
       signature_superviseur: "",
-      statut: "En attente",
+      status: 0,
+      date_validation: "",
     },
     dateSelected: null,
-    validTrue: false
+    validTrue: false,
   }),
   // persist: true,
   getters: {
@@ -61,7 +62,7 @@ export const useDataStore = defineStore("dataStore", {
         nbr_Imp: 0,
         nbr_kit: 0,
         nbr_mobi: 0,
-        statut: 'En attente',
+        statut: "En attente",
         commentaire_globale_chief: "",
         globl_comment_superviseur: "",
         signature_chef: "",
@@ -75,7 +76,12 @@ export const useDataStore = defineStore("dataStore", {
       this.dateSelected = null;
     },
 
-    addDetailAg(detail: { commentaire: string; agent_id_fk: number; type_probleme_id_fk: number; nom_eq:string }) {
+    addDetailAg(detail: {
+      commentaire: string;
+      agent_id_fk: number;
+      type_probleme_id_fk: number;
+      nom_eq: string;
+    }) {
       // Trouver le détail existant dans detailag
       const existingDetailIndex = this.collectedData.detailag.findIndex(
         (d: any) => d.agent_id_fk === detail.agent_id_fk
@@ -97,15 +103,13 @@ export const useDataStore = defineStore("dataStore", {
       console.log("Updated detailag:", this.collectedData.detailag);
     },
 
-
-
     addDetailEq(detail: {
       equipement_id_fk: number;
       commentaire: string;
       type_probleme_id_fk: number;
       statut: string;
       nom_eq: string;
-      type_eq:string;
+      type_eq: string;
     }) {
       const existingDetailIndex = this.collectedData.detaileq.findIndex(
         (d: any) => d.equipement_id_fk === detail.equipement_id_fk
@@ -125,7 +129,6 @@ export const useDataStore = defineStore("dataStore", {
       console.log("Updated detaileq:", this.collectedData.detaileq);
       console.log("After update:", this.collectedData);
     },
-
 
     addOperationDetail(
       agentName: string,
@@ -158,7 +161,10 @@ export const useDataStore = defineStore("dataStore", {
     async indexTrancheHoraire() {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
+        const { apiWithoutAuth } = createApi(
+          "http://57.128.30.4/api/",
+          token
+        );
 
         const response = await apiWithoutAuth.get("v1/tranche");
         return response.data;
@@ -170,9 +176,12 @@ export const useDataStore = defineStore("dataStore", {
     async addData(data: any) {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
+        const { apiWithoutAuth } = createApi(
+          "http://57.128.30.4/api/",
+          token
+        );
         const response = await apiWithoutAuth.post(
-          "v1/operationJournaliere",
+          "/v1/operationJournaliere",
           data
         );
         return response.data;
@@ -184,7 +193,10 @@ export const useDataStore = defineStore("dataStore", {
     async getStat() {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
+        const { apiWithoutAuth } = createApi(
+          "http://57.128.30.4/api/",
+          token
+        );
 
         const response = await apiWithoutAuth.get("v1/operationjournaliere");
 
@@ -194,12 +206,17 @@ export const useDataStore = defineStore("dataStore", {
       }
     },
 
-    async getStatRecap(date:any) {
+    async getStatRecap(date: any) {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
+        const { apiWithoutAuth } = createApi(
+          "http://57.128.30.4/api/",
+          token
+        );
 
-        const response = await apiWithoutAuth.get(`v1/recapGlobale/${date}/${date}`);
+        const response = await apiWithoutAuth.get(
+          `v1/recapGlobale/${date}/${date}`
+        );
 
         return response.data;
       } catch (error) {
@@ -210,12 +227,29 @@ export const useDataStore = defineStore("dataStore", {
     async getStatByUser(idUser: any) {
       try {
         const token = useTokenStore();
-        const { apiWithoutAuth } = createApi("http://57.128.30.4/api/", token);
+        const { apiWithoutAuth } = createApi(
+          "http://57.128.30.4/api/",
+          token
+        );
 
         const response = await apiWithoutAuth.get(
           `v1/operationjournaliereByRespo/${idUser}`
         );
 
+        return response.data;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    async validatePv(data:any) {
+      try {
+        const token = useTokenStore();
+        const { apiWithoutAuth } = createApi(
+          "http://57.128.30.4/api",
+          token
+        );
+        const response = await apiWithoutAuth.post("/ValidatePvByRespo", data);
         return response.data;
       } catch (error) {
         throw error;

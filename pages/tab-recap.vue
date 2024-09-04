@@ -193,11 +193,12 @@ function navigateToAnotherPage() {
 
 async function handleSubmit() {
   loading.value = true;
+  let response;
   try {
     const roleId = tokenStore.getDataInfo.valid_roles_and_sites[0].role_id;
 
     if (roleId === 3) {
-      const response = await dataStore.addData(dataStore.collectedData);
+      response = await dataStore.addData(dataStore.collectedData);
 
       if (response.message == 201) {
         isOpen.value = true;
@@ -206,6 +207,18 @@ async function handleSubmit() {
         console.log(response);
       }
     } else {
+      const date = new Date();
+      const heureActuelle = date.toLocaleTimeString("fr-FR", { hour12: false });
+      const data = {
+        responsable_id_fk: tokenStore.getDataInfo.agent.id,
+        commentaire: dataStore.collectedData.globl_comment_superviseur,
+        signature: dataStore.collectedData.signature_superviseur,
+        is_valid: 1,
+        date_validation: dataStore.collectedData.date + " " + heureActuelle,
+      };
+      response = await dataStore.validatePv(data);
+      console.log(response);
+
       if (
         dataStore.collectedData.signature_chef != "" &&
         dataStore.collectedData.signature_superviseur != ""
@@ -227,6 +240,22 @@ async function handleSubmit() {
   }
 
   console.log(dataStore.collectedData);
+}
+
+async function handleCancelledSubmit() {
+  try {
+    const date = new Date();
+    const heureActuelle = date.toLocaleTimeString("fr-FR", { hour12: false });
+    const data = {
+      responsable_id_fk: tokenStore.getDataInfo.agent.id,
+      commentaire: dataStore.collectedData.globl_comment_superviseur,
+      signature: null,
+      is_valid: 0,
+      date_validation: dataStore.collectedData.date + " " + heureActuelle,
+    };
+    const response = await dataStore.validatePv(data);
+    console.log(response);
+  } catch (error) {}
 }
 
 const handleSignatureUpdate = (signature: string) => {
@@ -444,7 +473,12 @@ onMounted(() => {
       </UCard>
     </div>
 
-    <div class="text-center" v-if="!isActif">
+    <div class="flex justify-center items-center space-x-4" v-if="!isActif">
+      <UButton
+        label="Annuler"
+        size="lg"
+        @click="handleCancelledSubmit"
+      />
       <UButton
         :label="
           tokenStore.getDataInfo.valid_roles_and_sites[0].role_id == 3
