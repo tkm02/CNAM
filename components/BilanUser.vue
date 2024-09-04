@@ -169,12 +169,14 @@ const loadTableData = async (nbr_agent: any, realise: any, objectif: any) => {
 const addAgentDetail = (
   commentaire: string,
   agent_id_fk: number,
-  id_pb: number
+  id_pb: number,
+  nbrEnrolled: number
 ) => {
   const newDetail = {
     commentaire: commentaire,
     agent_id_fk: agent_id_fk,
     type_probleme_id_fk: id_pb,
+    nbrEnrolled:nbrEnrolled
   };
   dataStore.addDetailAg(newDetail);
 };
@@ -324,7 +326,7 @@ async function getDataAgent() {
     rows.value = Object.values(response);
 
     rows.value.forEach((row: any) => {
-      addAgentDetail("RAS", row.id_agent, 0);
+      addAgentDetail("RAS", row.id_agent, 0, 0);
     });
 
     selected.value = rows.value;

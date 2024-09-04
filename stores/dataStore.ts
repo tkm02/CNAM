@@ -23,7 +23,7 @@ export const useDataStore = defineStore("dataStore", {
       globl_comment_superviseur: "",
       signature_chef: "",
       signature_superviseur: "",
-      status: 0,
+      statut: 0,
       date_validation: "",
     },
     dateSelected: null,
@@ -62,11 +62,12 @@ export const useDataStore = defineStore("dataStore", {
         nbr_Imp: 0,
         nbr_kit: 0,
         nbr_mobi: 0,
-        statut: "En attente",
+        statut: 0,
         commentaire_globale_chief: "",
         globl_comment_superviseur: "",
         signature_chef: "",
         signature_superviseur: "",
+        date_validation:''
       };
 
       console.log("After delete:", this.collectedData); // Log après suppression
@@ -162,7 +163,7 @@ export const useDataStore = defineStore("dataStore", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
+          "http://192.168.252.123:8000/api",
           token
         );
 
@@ -177,7 +178,7 @@ export const useDataStore = defineStore("dataStore", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
+          "http://192.168.252.123:8000/api/",
           token
         );
         const response = await apiWithoutAuth.post(
@@ -194,7 +195,7 @@ export const useDataStore = defineStore("dataStore", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
+          "http://192.168.252.123:8000/api",
           token
         );
 
@@ -210,7 +211,7 @@ export const useDataStore = defineStore("dataStore", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
+          "http://192.168.252.123:8000/api",
           token
         );
 
@@ -228,7 +229,7 @@ export const useDataStore = defineStore("dataStore", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://57.128.30.4/api/",
+          "http://192.168.252.123:8000/api",
           token
         );
 

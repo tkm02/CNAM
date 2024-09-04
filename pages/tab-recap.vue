@@ -476,7 +476,7 @@ onMounted(() => {
     </div>
 
     <div class="flex justify-center items-center space-x-4" v-if="!isActif">
-      <UButton label="Annuler" size="lg" @click="handleCancelledSubmit" />
+      <UButton v-if="tokenStore.getDataInfo.valid_roles_and_sites[0].role_id == 2" label="Annuler" size="lg" @click="handleCancelledSubmit" />
       <UButton
         :label="
           tokenStore.getDataInfo.valid_roles_and_sites[0].role_id == 3
