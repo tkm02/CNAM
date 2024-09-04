@@ -181,7 +181,7 @@ export const useDataStore = defineStore("dataStore", {
           token
         );
         const response = await apiWithoutAuth.post(
-          "/v1/operationJournaliere",
+          "v1/operationJournaliere",
           data
         );
         return response.data;
