@@ -4,7 +4,7 @@ export const useAuthStore = defineStore("auth", {
       try {
         const config = useRuntimeConfig();
         const tokenStore = useTokenStore();
-        const { apiWithoutAuth } = createApi("http://54.128.30.4/api", tokenStore);
+        const { apiWithoutAuth } = createApi("http://57.128.30.4/api", tokenStore);
 
         const response = await apiWithoutAuth.post(`/login`, data);
         return response;

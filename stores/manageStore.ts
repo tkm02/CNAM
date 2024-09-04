@@ -4,7 +4,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://54.128.30.4/api/",
+          "http://57.128.30.4/api/",
           token
         );
 
@@ -21,7 +21,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://54.128.30.4/api/",
+          "http://57.128.30.4/api/",
           token
         );
         const response = await apiWithoutAuth.get(
@@ -38,7 +38,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://54.128.30.4/api/",
+          "http://57.128.30.4/api/",
           token
         );
 
@@ -55,7 +55,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://54.128.30.4/api/",
+          "http://57.128.30.4/api/",
           token
         );
 
@@ -72,7 +72,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://54.128.30.4/api/",
+          "http://57.128.30.4/api/",
           token
         );
 
@@ -89,7 +89,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://54.128.30.4/api/",
+          "http://57.128.30.4/api/",
           token
         );
 
@@ -107,7 +107,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://54.128.30.4/api/",
+          "http://57.128.30.4/api/",
           token
         );
         const response = await apiWithoutAuth.get(
@@ -124,7 +124,7 @@ export const useManageStore = defineStore("manage", {
       try {
         const token = useTokenStore();
         const { apiWithoutAuth } = createApi(
-          "http://54.128.30.4/api",
+          "http://57.128.30.4/api",
           token
         );
         const response = await apiWithoutAuth.get(`/v1/recapEquipe/${id_equipe}/${date}/`);
