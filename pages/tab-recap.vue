@@ -193,6 +193,8 @@ function navigateToAnotherPage() {
 
 async function handleSubmit() {
   loading.value = true;
+  console.log(dataStore.collectedData);
+
   let response;
   try {
     const roleId = tokenStore.getDataInfo.valid_roles_and_sites[0].role_id;
@@ -474,11 +476,7 @@ onMounted(() => {
     </div>
 
     <div class="flex justify-center items-center space-x-4" v-if="!isActif">
-      <UButton
-        label="Annuler"
-        size="lg"
-        @click="handleCancelledSubmit"
-      />
+      <UButton label="Annuler" size="lg" @click="handleCancelledSubmit" />
       <UButton
         :label="
           tokenStore.getDataInfo.valid_roles_and_sites[0].role_id == 3
