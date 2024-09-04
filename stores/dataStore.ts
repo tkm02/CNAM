@@ -28,7 +28,7 @@ export const useDataStore = defineStore("dataStore", {
     dateSelected: null,
     validTrue: false
   }),
-  persist: true,
+  // persist: true,
   getters: {
     getDateSelected: (state) => state.dateSelected,
   },

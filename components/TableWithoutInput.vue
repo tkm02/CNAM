@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { format } from "date-fns";
 import { z } from "zod";
 
 definePageMeta({
@@ -63,6 +64,10 @@ function truncateText(text: string, maxLength: number): string {
   const truncated = text.slice(0, maxLength - 3);
   return `${truncated}...`;
 }
+
+const dateFormat = (date: Date): string => {
+  return format(date, "yyyy-MM-dd");
+};
 
 const loadTableData = async (
   nbr_kit: number,
@@ -210,7 +215,13 @@ async function getDataKit() {
     const response = await manage.getKit(
       token.getDataInfo.valid_roles_and_sites[0].id_site
     );
-    console.log("Response from getKit:", response);
+
+    const recapEquipement = await manage.getRecapEquipement(
+      token.getDate.split("/").reverse().join("-")
+    );
+
+    console.log(recapEquipement);
+    
 
     if (response) {
       imps.value = Object.values(
@@ -415,6 +426,14 @@ watch(
 watch([() => rows.value, () => imps.value], () => {
   console.log("Updated rows:", rows.value);
   console.log("Updated imps:", imps.value);
+});
+
+watch(() => state.message, (newValue: any) => {
+  if(token.getDataInfo.valid_roles_and_sites[0].role_id === 2){
+    dataStore.collectedData.globl_comment_superviseur = newValue
+  }else{
+    dataStore.collectedData.commentaire_globale_chief = newValue
+  }
 });
 
 const addEquipmentDetail = (motif: any, id: any, commentaire: string) => {
@@ -664,13 +683,17 @@ function showGlobalCommentModal() {
     </div>
   </div>
 
-  <div class="text-center mt-8">
+  <div>
+    <UTextarea v-model="state.message" type="text" placeholder="Observation globale de la journée..." />
+  </div>
+
+  <!-- <div class="text-center mt-8">
     <UButton
       label="Commentaire global"
       color="red"
       @click="showGlobalCommentModal"
     />
-  </div>
+  </div> -->
 
   <UModal v-model="showModal">
     <UCard>

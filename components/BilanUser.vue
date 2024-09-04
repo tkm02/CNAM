@@ -367,7 +367,7 @@ onMounted(() => {
   </div>
 
   <UCard :ui="{ ring: 'ring-blue-500' }">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 2xl:gap-64">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 2xl:gap-10">
       <div>
         <p class="font-bold text-sm">Nombre total d'enrôlements</p>
         <UInput
@@ -463,13 +463,13 @@ onMounted(() => {
           <UForm :state="state">
             <UFormGroup>
               <USelect
-                placeholder="Motif de retrait"
+                placeholder="Motif d'absence"
                 color="primary"
                 variant="outline"
                 :options="[
-                  { name: 'Maladie', value: 1 },
-                  { name: 'Congés', value: 2 },
-                  { name: 'Autre', value: 3 },
+                   { name: 'Arrêt maladie', value: 1 },
+                  { name: 'Permission exceptionnelle', value: 2 },
+                  { name: 'Absence injustifiée', value: 3 }
                 ]"
                 v-model="state.inpusel"
                 option-attribute="name"

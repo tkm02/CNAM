@@ -89,15 +89,15 @@ async function getInfo(date: string) {
       return {
         id_equipe: team.id_equipe || team.equipe_id,
         libelle: team.nom_equipe,
-        nbr_agent: collectedData.nbr_agent,
-        nbr_imprimante: collectedData.nbr_Imp,
-        nbr_kit: collectedData.nbr_kit,
-        type_operation: collectedData.type_operation,
+        nbr_agent: 0,
+        nbr_imprimante: 0,
+        nbr_kit: 0,
+        type_operation: 0,
         realise: {
-          value: collectedData.realise,
+          value: 0,
           class: "bg-blue-500/50 text-white",
         },
-        objectif: collectedData.objectif,
+        objectif: 0,
       };
     };
 

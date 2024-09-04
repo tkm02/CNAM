@@ -12,7 +12,7 @@ const loading = ref(false);
 const title1 = "Confirmez les kits et imprimantes utilisées";
 const text = "Décochez un kit ou une imprimante s'il n'a pas été utilisé !";
 
-const title2 = "Quel a été la performance de l'";
+const title2 = token.getDataInfo.valid_roles_and_sites[0].role_id === 3 ?  "Quel a été la performance de l" : "Déclaration de la performance du chef de l’";
   "- soit le nombre total d'enrôlements de l'équipe, soit le nombre d'enrôlements faits par chaque agent.";
 const textOperation =
   route.params.type_operation == "1" ? "d'enrôlement" : "de production";

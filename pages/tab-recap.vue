@@ -92,7 +92,7 @@ const isActif = ref(
   dataStore.collectedData.signature_chef != "" &&
     dataStore.collectedData.signature_superviseur != ""
 );
-
+const isOpen = ref(false);
 // Fonction pour mettre à jour les données
 
 function getDate(id: any) {
@@ -180,6 +180,17 @@ function updateData() {
   console.log(data.value);
 }
 
+function navigateToAnotherPage() {
+  if (
+    dataStore.collectedData.signature_chef != "" &&
+    dataStore.collectedData.signature_superviseur != ""
+  ) {
+    isActif.value = true;
+  } else {
+    navigateTo("/");
+  }
+}
+
 async function handleSubmit() {
   loading.value = true;
   try {
@@ -189,14 +200,7 @@ async function handleSubmit() {
       const response = await dataStore.addData(dataStore.collectedData);
 
       if (response.message == 201) {
-        if (
-          dataStore.collectedData.signature_chef != "" &&
-          dataStore.collectedData.signature_superviseur != ""
-        ) {
-          isActif.value = true;
-        } else {
-          navigateTo("/");
-        }
+        isOpen.value = true;
       } else {
         alert("Une erreur est survenue !");
         console.log(response);
@@ -324,7 +328,7 @@ onMounted(() => {
               padding: 'py-1 px-2',
             },
             td: {
-              base: 'border border-b- border-gray-500 text-center w-[250px] text-left',
+              base: 'border border-b border-gray-500 text-center w-[250px] text-left',
               padding: 'py-1 px-2',
             },
           }"
@@ -336,6 +340,11 @@ onMounted(() => {
               Observations
             </caption>
           </template>
+          <template #superviseur-data="{ row }">
+            <h1 class="text-wrap">
+              {{ row.superviseur }}
+            </h1>
+          </template>
           <template #chef_equipe-data="{ row }">
             <div class="w-[100%] text-wrap">
               <!-- <p class="mb-3">Observations détaillées :</p> -->
@@ -345,12 +354,12 @@ onMounted(() => {
               >
                 <li v-for="data in dataStore.collectedData.detaileq">
                   <div v-if="data['type_probleme_id_fk'] !== 0" class="mb-4">
-                    <span class="font-bold">-{{ data["nom_eq"] }}</span>
+                    <span class="font-bold">-{{ data["nom_eq"] }}</span> <br />
                     <span class="font-bold">- motif</span> :
                     {{
                       data["type_probleme_id_fk"] == 1 ? "Panne" : "Maintenance"
                     }}
-                    <br>
+                    <br />
                     <span class="font-bold">- commentaire</span> :
                     {{ data["commentaire"] }} <br />
                   </div>
@@ -436,10 +445,29 @@ onMounted(() => {
     </div>
 
     <div class="text-center" v-if="!isActif">
-      <UButton label="Soumettre" size="lg" @click="handleSubmit" />
+      <UButton
+        :label="
+          tokenStore.getDataInfo.valid_roles_and_sites[0].role_id == 3
+            ? 'Soumettre'
+            : 'Terminer'
+        "
+        size="lg"
+        @click="handleSubmit"
+      />
     </div>
     <div class="text-center" v-else>
       <UButton label="Exporter en pdf" size="lg" color="red" />
     </div>
+
+    <UModal v-model="isOpen">
+      <div
+        class="h-[300px] flex flex-col justify-center items-center space-y-4"
+      >
+        <h1 class="text-center w-[350px]">
+          La soumission de votre déclaration a été effectué avec succès !
+        </h1>
+        <UButton label="Ok" size="xl" @click="navigateToAnotherPage" />
+      </div>
+    </UModal>
   </div>
 </template>
